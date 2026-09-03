@@ -1,0 +1,11 @@
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: world-model-frontend-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./desktop-app/src:/app/src
+    restart: unless-stopped

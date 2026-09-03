@@ -1,0 +1,16 @@
+node_modules/
+desktop-app/node_modules/
+desktop-app/out/
+desktop-app/release/
+desktop-app/release2/
+desktop-app/release3/
+docs/
+.claude/
+.git/
+.vscode/
+.idea/
+*.docx
+*.pdf
+*.log
+.DS_Store
+Thumbs.db

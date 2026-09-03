@@ -1,0 +1,49 @@
+{
+  "name": "world-model-dashboard",
+  "version": "1.0.0",
+  "description": "OcuNet - Predictive Cyber Defense Dashboard",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "dev:container": "cross-env ELECTRON_RENDERER_URL=http://localhost:5173 electron .",
+    "docker:up": "docker compose -f ../docker-compose.yml up --build -d",
+    "docker:down": "docker compose -f ../docker-compose.yml down",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "cross-env": "^10.1.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-vite": "^5.0.0",
+    "playwright-core": "^1.62.1",
+    "vite": "^7.3.6"
+  },
+  "build": {
+    "appId": "com.sih.worldmodeldashboard",
+    "productName": "OcuNet",
+    "directories": {
+      "output": "release3"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-zoom": "^2.2.0",
+    "cytoscape": "^3.34.2",
+    "cytoscape-fcose": "^2.2.0",
+    "cytoscape-svg": "^0.4.0",
+    "react": "^19.2.8",
+    "react-chartjs-2": "^5.3.1",
+    "react-cytoscapejs": "^2.0.0",
+    "react-dom": "^19.2.8"
+  }
+}

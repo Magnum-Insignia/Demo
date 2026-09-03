@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SENTINEL — World Model Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0F1C; --panel:#101928; --panel2:#0D1522; --border:#20304A; --border-soft:#182740;
+    --text:#E7ECF5; --muted:#8492AC; --muted2:#54637E;
+    --safe:#2FB8A6; --watch:#E8A33D; --critical:#E5484D; --accent:#5B8CFF; --sel:#F2C14E;
+    --violet:#A855F7; --amber:#F0B429; --teal:#22D3C7; --grey:#8A93A6; --infra:#5C7291; --fw:#E27D4A;
+    --mono:'IBM Plex Mono',monospace; --head:'Space Grotesk',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12.5px;}
+  .screen{display:none;} .screen.active{display:block;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--border);background:var(--panel2);}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:700;font-size:16px;}
+  .brand .mark{width:20px;height:20px;background:var(--accent);border-radius:3px;position:relative;}
+  .brand .mark::after{content:'';position:absolute;inset:5px;border:1px solid var(--bg);border-radius:2px;}
+  .tabs{display:flex;gap:2px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:3px;}
+  .tabs span{padding:6px 15px;border-radius:3px;color:var(--muted);font-size:12px;cursor:pointer;}
+  .tabs span.on{background:var(--panel);color:var(--text);border:1px solid var(--border-soft);}
+  .right-status{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:11px;}
+  .zt-badge{border:1px solid var(--safe);color:var(--safe);padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:0.4px;}
+  .logout{color:var(--muted);cursor:pointer;border:1px solid var(--border);padding:5px 10px;border-radius:3px;}
+  .logout:hover{color:var(--text);border-color:var(--muted);}
+
+  #login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:
+    radial-gradient(circle at 30% 20%, rgba(91,140,255,0.08), transparent 40%),
+    radial-gradient(circle at 75% 70%, rgba(242,193,78,0.06), transparent 40%), var(--bg);}
+  .login-brand{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+  .login-brand .mark{width:34px;height:34px;background:var(--accent);border-radius:6px;position:relative;}
+  .login-brand .mark::after{content:'';position:absolute;inset:8px;border:2px solid var(--bg);border-radius:3px;}
+  .login-brand div{font-family:var(--head);font-size:26px;font-weight:700;}
+  .login-sub{color:var(--muted);font-size:12px;margin-top:-30px;margin-bottom:36px;}
+  .role-cards{display:flex;gap:20px;}
+  .role-card{width:230px;border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:26px 22px;cursor:pointer;transition:.15s;}
+  .role-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .role-card.picked{border-color:var(--sel);box-shadow:0 0 0 1px var(--sel);}
+  .role-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:15px;margin-bottom:14px;}
+  .role-icon.admin{background:rgba(91,140,255,0.15);color:var(--accent);}
+  .role-icon.inv{background:rgba(242,193,78,0.15);color:var(--sel);}
+  .role-title{font-family:var(--head);font-weight:600;font-size:15px;margin-bottom:6px;}
+  .role-desc{color:var(--muted);font-size:11px;line-height:1.5;}
+  .cred-box{margin-top:28px;width:480px;border:1px solid var(--border);background:var(--panel);border-radius:8px;padding:22px 26px;display:none;}
+  .cred-box.show{display:block;}
+  .cred-box label{display:block;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;margin-top:14px;}
+  .cred-box input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:9px 11px;color:var(--text);font-family:var(--mono);font-size:12.5px;}
+  .cred-box button{width:100%;margin-top:20px;background:var(--accent);color:#0A0F1C;border:none;border-radius:4px;padding:11px;font-family:var(--head);font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.3px;}
+  .cred-note{color:var(--muted2);font-size:10px;margin-top:12px;text-align:center;}
+
+  .layout{display:grid;grid-template-columns:1fr 330px;gap:1px;background:var(--border);}
+  .col{display:flex;flex-direction:column;gap:1px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:1px;}
+  .panel{background:var(--panel);padding:14px 18px;}
+  .panel-title{font-family:var(--head);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+
+  svg.topo{width:100%;height:400px;}
+  .subnet-box{fill:rgba(91,140,255,0.03);stroke:var(--border-soft);stroke-width:1;stroke-dasharray:4 3;}
+  .subnet-label{fill:var(--muted2);font-size:9px;font-family:var(--mono);letter-spacing:0.3px;}
+  .edge{stroke:var(--border-soft);stroke-width:1.3;fill:none;}
+  .edge.hi{stroke:var(--sel);stroke-width:2;}
+  .edge.infra{stroke:var(--infra);stroke-width:1.3;stroke-dasharray:3 3;}
+  .edge-label{fill:var(--muted2);font-size:7.5px;font-family:var(--mono);}
+  .node{cursor:pointer;}
+  .node-lbl{fill:var(--text);font-size:9.5px;font-family:var(--mono);text-anchor:middle;}
+  .node-sub{fill:var(--muted2);font-size:7.5px;font-family:var(--mono);text-anchor:middle;}
+  .legend-row{display:flex;gap:14px;padding-top:8px;border-top:1px solid var(--border-soft);margin-top:8px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .sq{width:9px;height:9px;display:inline-block;transform:rotate(45deg);}
+  .hexdot{width:9px;height:9px;display:inline-block;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
+
+  .scrub-bar{padding:12px 4px 2px;border-top:1px solid var(--border-soft);margin-top:10px;}
+  .scrub-row{display:flex;align-items:center;gap:14px;}
+  .scrub-row input[type=range]{flex:1;accent-color:var(--sel);}
+  .t-label{font-size:10.5px;color:var(--muted);white-space:nowrap;}
+  .t-label b{color:var(--sel);}
+
+  svg.chart{width:100%;height:150px;}
+  .now-line{stroke:var(--sel);stroke-width:1;stroke-dasharray:3 3;}
+  .now-tag{fill:var(--sel);font-size:10px;font-family:var(--mono);}
+  .axis-label{fill:var(--muted2);font-size:9px;font-family:var(--mono);}
+
+  .ts-legend{display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;}
+  .ts-legend .li{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);}
+  .ts-legend b{color:var(--text);font-weight:600;margin-left:3px;}
+  .line-flows{stroke:var(--accent);} .line-packets{stroke:var(--teal);} .line-bytes{stroke:var(--sel);}
+
+  .pie-wrap{display:flex;gap:22px;}
+  .pie-block{flex:1;display:flex;flex-direction:column;align-items:center;}
+  .pie-cap{font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;}
+  svg.pie{width:120px;height:120px;}
+  .pie-center{font-family:var(--head);font-weight:700;fill:var(--text);font-size:20px;text-anchor:middle;}
+  .pie-center-sub{fill:var(--muted2);font-size:8px;text-anchor:middle;}
+  .pie-legend{margin-top:8px;width:100%;}
+  .pl-row{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);padding:2px 4px;}
+  .pl-row .dot{margin-right:5px;}
+
+  .info-host{font-family:var(--head);font-weight:700;font-size:16px;margin-bottom:6px;}
+  .info-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .tag{font-size:10px;padding:2px 8px;border-radius:2px;border:1px solid var(--border);color:var(--muted);}
+  .tag.risk{border-color:var(--critical);color:var(--critical);}
+  .info-row{display:flex;justify-content:space-between;padding:4px 0;color:var(--muted);font-size:11px;border-top:1px solid var(--border-soft);}
+  .info-row b{color:var(--text);font-weight:500;}
+  .investigate-btn{width:100%;margin-top:12px;background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px;border-radius:4px;font-family:var(--head);font-weight:600;font-size:11.5px;cursor:pointer;letter-spacing:0.3px;}
+  .investigate-btn:hover{background:rgba(91,140,255,0.1);}
+
+  svg.radar{width:100%;height:170px;}
+  .radar-grid{stroke:var(--border-soft);stroke-width:1;fill:none;}
+  .radar-shape{fill:rgba(91,140,255,0.25);stroke:var(--accent);stroke-width:1.5;}
+  .radar-lbl{fill:var(--muted);font-size:8.5px;font-family:var(--mono);text-anchor:middle;}
+
+  .flag-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border-soft);cursor:pointer;}
+  .flag-item:hover{background:rgba(255,255,255,0.02);}
+  .flag-item:first-child{border-top:none;}
+  .flag-name{font-size:11.5px;color:var(--text);}
+  .flag-score{font-family:var(--head);font-weight:700;font-size:13px;}
+  .flag-score.critical{color:var(--critical);} .flag-score.watch{color:var(--watch);}
+
+  .nl-box{display:flex;gap:8px;}
+  .nl-box input{flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;}
+  .nl-box button{background:var(--accent);color:#0A0F1C;border:none;border-radius:4px;padding:0 16px;font-family:var(--head);font-weight:700;font-size:11.5px;cursor:pointer;}
+  .nl-chips{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap;}
+  .nl-chip{border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:12px;font-size:10.5px;cursor:pointer;}
+  .nl-chip:hover{border-color:var(--accent);color:var(--text);}
+  .nl-answer{margin-top:12px;border-left:2px solid var(--accent);padding:8px 12px;background:var(--panel2);color:var(--text);font-size:11.5px;line-height:1.6;display:none;}
+  .nl-answer.show{display:block;}
+
+  .footer-audit{padding:8px 22px;color:var(--muted2);font-size:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;background:var(--panel2);}
+
+  .breadcrumb{color:var(--muted);font-size:11px;margin-bottom:2px;cursor:pointer;}
+  .breadcrumb:hover{color:var(--accent);}
+  .inv-header{display:flex;justify-content:space-between;align-items:flex-end;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--panel2);}
+  .inv-host{font-family:var(--head);font-weight:700;font-size:20px;}
+  .inv-sub{color:var(--muted);font-size:11px;margin-top:4px;}
+  .cli-line{color:var(--muted2);font-size:10.5px;margin-top:6px;}
+  .cli-line b{color:var(--teal);font-weight:500;}
+  .inc-table{width:100%;border-collapse:collapse;}
+  .inc-table td{padding:8px 4px;border-top:1px solid var(--border-soft);font-size:11.5px;}
+  .inc-table tr:first-child td{border-top:none;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.4px;}
+  .inc-bar-bg{background:var(--panel2);border-radius:2px;height:7px;overflow:hidden;width:100px;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .inc-bar{height:100%;background:var(--watch);}
+  .seq-wrap{display:flex;align-items:center;padding:26px 10px 10px;}
+  .seq-node{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+  .seq-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:12px;border:2px solid var(--muted2);background:var(--panel2);color:var(--muted);}
+  .seq-node.observed .seq-circle{border-color:var(--safe);color:var(--safe);background:rgba(47,184,166,0.1);}
+  .seq-node.current .seq-circle{border-color:var(--sel);color:var(--sel);background:rgba(242,193,78,0.15);width:46px;height:46px;box-shadow:0 0 10px rgba(242,193,78,0.4);}
+  .seq-node.predicted .seq-circle{border-style:dashed;border-color:var(--watch);color:var(--watch);background:transparent;}
+  .seq-line{position:absolute;top:19px;left:-50%;width:100%;height:2px;background:var(--border-soft);z-index:-1;}
+  .seq-node:first-child .seq-line{display:none;}
+  .seq-node.observed .seq-line, .seq-node.current .seq-line{background:var(--safe);}
+  .seq-tag{font-size:9.5px;color:var(--muted2);margin-top:6px;text-align:center;}
+  .seq-node.current .seq-tag{color:var(--sel);font-weight:600;}
+  .explain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);margin-top:1px;}
+  .ex-card{background:var(--panel);padding:14px 16px;}
+  .ex-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+  .shap-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .shap-name{width:74px;font-size:9.5px;color:var(--muted);flex:none;}
+  .shap-bar-bg{flex:1;height:6px;background:var(--panel2);border-radius:2px;overflow:hidden;}
+  .shap-bar{height:100%;background:var(--sel);}
+  .att-strip{display:flex;gap:2px;height:26px;align-items:flex-end;}
+  .att-bar{flex:1;background:var(--accent);opacity:0.3;border-radius:1px;}
+  .leadtime-num{font-family:var(--head);font-size:26px;font-weight:700;color:var(--sel);}
+  .leadtime-sub{color:var(--muted);font-size:10px;margin-top:4px;}
+  .statelabel-chip{display:inline-block;border:1px solid var(--watch);color:var(--watch);padding:5px 11px;border-radius:3px;font-size:11px;margin-top:4px;}
+  .mini-graph{padding:14px 18px;}
+
+  /* ---- stage colors (shared across pies / tables / trajectories) ---- */
+  .stage-recon{color:var(--safe);} .stage-access{color:var(--teal);} .stage-lateral{color:var(--watch);}
+  .stage-c2{color:var(--fw);} .stage-exfil{color:var(--critical);} .stage-nominal{color:var(--muted);}
+  .stagepill{display:inline-block;padding:2px 7px;border-radius:2px;font-size:9.5px;border:1px solid currentColor;white-space:nowrap;}
+
+  /* ---- packet table (window traffic) ---- */
+  .pkt-table-wrap{margin-top:2px;max-height:190px;overflow-y:auto;border-top:1px solid var(--border-soft);}
+  table.pkt-table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  table.pkt-table thead th{position:sticky;top:0;background:var(--panel);text-align:left;color:var(--muted2);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;font-size:8.8px;padding:6px 6px;border-bottom:1px solid var(--border-soft);}
+  table.pkt-table td{padding:5px 6px;border-top:1px solid var(--border-soft);color:var(--muted);white-space:nowrap;}
+  table.pkt-table td.mono-strong{color:var(--text);}
+  table.pkt-table tbody tr{cursor:default;}
+  table.pkt-table tbody tr.clickable{cursor:pointer;}
+  table.pkt-table tbody tr.clickable:hover{background:rgba(255,255,255,0.03);}
+  table.pkt-table tbody tr.picked{background:rgba(242,193,78,0.08);}
+  .prob-bar-bg{background:var(--panel2);border-radius:2px;height:6px;width:56px;display:inline-block;overflow:hidden;vertical-align:middle;margin-right:6px;}
+  .prob-bar{height:100%;}
+  .pkt-scrollbox{max-height:300px;overflow-y:auto;}
+
+  /* ---- investigation: two-col rows ---- */
+  .inv-row2{display:grid;grid-template-columns:1.15fr 1fr;gap:1px;background:var(--border);}
+  .inv-row2 .panel{background:var(--panel);}
+
+  /* ---- flagged network graph ---- */
+  svg.flagnet{width:100%;height:260px;}
+  .fn-lbl{fill:var(--text);font-size:9.5px;font-family:var(--mono);text-anchor:middle;}
+  .fn-sub{fill:var(--muted2);font-size:8px;font-family:var(--mono);text-anchor:middle;}
+
+  /* ---- step selector (packet trajectory) ---- */
+  .step-row{display:flex;align-items:flex-end;gap:0;padding:20px 6px 4px;}
+  .step-node{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;background:none;border:none;font-family:var(--mono);}
+  .step-line{position:absolute;top:19px;left:-50%;width:100%;height:2px;background:var(--border-soft);z-index:-1;}
+  .step-node:first-child .step-line{display:none;}
+  .step-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:11px;border:2px solid var(--muted2);background:var(--panel2);color:var(--muted);cursor:pointer;transition:.12s;}
+  .step-node:hover .step-circle{border-color:var(--accent);}
+  .step-node.observed .step-circle{border-color:var(--safe);color:var(--safe);background:rgba(47,184,166,0.1);}
+  .step-node.current .step-circle{border-color:var(--sel);color:var(--sel);background:rgba(242,193,78,0.15);}
+  .step-node.active .step-circle{width:46px;height:46px;box-shadow:0 0 0 3px rgba(242,193,78,0.25);}
+  .step-node.active .step-line, .step-node.observed .step-line, .step-node.current .step-line{background:var(--safe);}
+  .step-tag{font-size:9px;color:var(--muted2);margin-top:6px;text-align:center;}
+  .step-prob{font-size:9.5px;font-weight:700;margin-top:2px;}
+  .step-node.active .step-tag{color:var(--sel);font-weight:600;}
+  .step-spark{width:100%;height:46px;margin-top:2px;}
+
+  /* ---- feature list card ---- */
+  .feat-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);padding:3px 0;border-top:1px solid var(--border-soft);}
+  .feat-row:first-child{border-top:none;}
+  .feat-row b{color:var(--text);font-weight:500;}
+
+  .flagged-net-empty{color:var(--muted2);font-size:11px;text-align:center;padding:60px 0;}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login" class="screen active">
+  <div class="login-brand"><div class="mark"></div><div>SENTINEL</div></div>
+  <div class="login-sub">World Model Console &nbsp;·&nbsp; SIH26153 (NTRO)</div>
+  <div class="role-cards">
+    <div class="role-card" id="roleAdmin" onclick="pickRole('admin')">
+      <div class="role-icon admin">A</div>
+      <div class="role-title">Administrator</div>
+      <div class="role-desc">Full network overview, flagged host triage, model configuration and audit access.</div>
+    </div>
+    <div class="role-card" id="roleInv" onclick="pickRole('inv')">
+      <div class="role-icon inv">I</div>
+      <div class="role-title">Investigator</div>
+      <div class="role-desc">Deep-dive into a single host: state trajectory, explainability, lead time, drivers.</div>
+    </div>
+  </div>
+  <div class="cred-box" id="credBox">
+    <label>Username</label><input type="text" value="analyst.01">
+    <label>Password</label><input type="password" value="••••••••">
+    <button onclick="authenticate()">AUTHENTICATE →</button>
+    <div class="cred-note">Zero-trust session · role-scoped access · action log is hash-chained &amp; immutable</div>
+  </div>
+</div>
+
+<!-- ================= ADMIN / COMMAND CENTER ================= -->
+<div id="admin" class="screen">
+  <div class="topbar">
+    <div class="brand"><div class="mark"></div>SENTINEL</div>
+    <div class="tabs">
+      <span class="on" id="tabFlagged" onclick="setListTab('flagged')">Flagged</span>
+      <span id="tabMonitored" onclick="setListTab('monitored')">Monitored</span>
+      <span id="tabAll" onclick="setListTab('all')">All Hosts</span>
+    </div>
+    <div class="right-status">
+      <span class="zt-badge">ZERO-TRUST SESSION</span>
+      <span>analyst.01 · Administrator</span>
+      <span class="logout" onclick="goLogin()">Logout</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="col">
+      <div class="panel">
+        <div class="panel-title">Network Topology &nbsp;<span style="font-weight:400;text-transform:none;color:var(--muted2);">click a node to inspect · scrub time to see forecast risk propagate</span></div>
+        <svg class="topo" viewBox="0 0 900 400" id="topoSvg"></svg>
+        <div class="legend-row">
+          <div class="legend-item"><span class="dot" style="background:var(--violet)"></span>Server</div>
+          <div class="legend-item"><span class="dot" style="background:var(--amber)"></span>Workstation</div>
+          <div class="legend-item"><span class="dot" style="background:var(--grey)"></span>Database</div>
+          <div class="legend-item"><span class="dot" style="background:var(--teal)"></span>External IP</div>
+          <div class="legend-item"><span class="sq" style="background:var(--fw)"></span>Firewall</div>
+          <div class="legend-item"><span class="hexdot" style="background:var(--infra)"></span>Router</div>
+          <div class="legend-item" style="margin-left:auto;"><span class="dot" style="background:var(--critical);box-shadow:0 0 6px var(--critical)"></span>Critical</div>
+          <div class="legend-item"><span class="dot" style="background:var(--watch)"></span>Elevated</div>
+          <div class="legend-item"><span class="dot" style="background:var(--safe)"></span>Nominal</div>
+        </div>
+        <div class="scrub-bar">
+          <div class="scrub-row">
+            <span class="t-label">Observed &nbsp;<b>t</b></span>
+            <input type="range" id="topoScrub" min="0" max="10" value="0" oninput="scrubTopo(this.value)">
+            <span class="t-label" style="text-align:right;">Forecast <b id="scrubTag">now</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="panel">
+          <div class="panel-title">Threat Analysis <span style="font-weight:400;text-transform:none;color:var(--muted2);">tracks scrub position</span></div>
+          <div class="pie-wrap">
+            <div class="pie-block">
+              <div class="pie-cap">By ATT&amp;CK stage · <span id="pieStageTag" style="color:var(--sel);">now</span></div>
+              <svg class="pie" viewBox="0 0 120 120" id="pieStage"></svg>
+              <div class="pie-legend" id="pieStageLegend"></div>
+            </div>
+            <div class="pie-block">
+              <div class="pie-cap">By severity · <span id="pieSevTag" style="color:var(--sel);">now</span></div>
+              <svg class="pie" viewBox="0 0 120 120" id="pieSeverity"></svg>
+              <div class="pie-legend" id="pieSeverityLegend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Live Traffic <span style="font-weight:400;text-transform:none;color:var(--muted2);">-60s → forecast · window: <span id="tsWindowTag" style="color:var(--sel);">now</span></span></div>
+          <div class="ts-legend">
+            <span class="li"><svg width="14" height="4"><line x1="0" y1="2" x2="14" y2="2" stroke="var(--accent)" stroke-width="2"/></svg>Flows <b id="tsFlowsVal"></b></span>
+            <span class="li"><svg width="14" height="4"><line x1="0" y1="2" x2="14" y2="2" stroke="var(--teal)" stroke-width="2"/></svg>Packets <b id="tsPacketsVal"></b></span>
+            <span class="li"><svg width="14" height="4"><line x1="0" y1="2" x2="14" y2="2" stroke="var(--sel)" stroke-width="2"/></svg>Bytes <b id="tsBytesVal"></b></span>
+          </div>
+          <svg class="chart" viewBox="0 0 700 130" id="tsChart"></svg>
+          <div class="pkt-table-wrap">
+            <table class="pkt-table" id="windowPktTable"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Ask Sentinel <span style="font-weight:400;text-transform:none;color:var(--muted2);">natural-language query interface</span></div>
+        <div class="nl-box">
+          <input type="text" id="nlInput" placeholder="e.g. what's driving the risk on Server-HWA?">
+          <button onclick="askNL()">Ask</button>
+        </div>
+        <div class="nl-chips">
+          <span class="nl-chip" onclick="chipAsk('What is driving the risk on Server-HWA?')">What's driving Server-HWA?</span>
+          <span class="nl-chip" onclick="chipAsk('Summarize current threats')">Summarize current threats</span>
+          <span class="nl-chip" onclick="chipAsk('Recommended action')">Recommended action</span>
+        </div>
+        <div class="nl-answer" id="nlAnswer"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <div class="panel-title">Selected Node</div>
+        <div id="infoPanel"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Risk Radar</div>
+        <svg class="radar" viewBox="0 0 200 170" id="radarSvg"></svg>
+      </div>
+      <div class="panel" style="flex:1;">
+        <div class="panel-title">Flagged Hosts <span id="flagCount" style="font-weight:400;text-transform:none;color:var(--muted2);"></span></div>
+        <div id="flaggedList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-audit"><span>audit log: immutable · hash-chained · consensus-verified</span><span>encoder: vector &nbsp; model: RSSM &nbsp; window: 10s</span></div>
+</div>
+
+<!-- ================= INVESTIGATION ================= -->
+<div id="investigation" class="screen">
+  <div class="topbar">
+    <div class="brand"><div class="mark"></div>SENTINEL</div>
+    <div class="right-status">
+      <span class="zt-badge">ZERO-TRUST SESSION</span>
+      <span>analyst.01</span>
+      <span class="logout" onclick="goLogin()">Logout</span>
+    </div>
+  </div>
+  <div class="inv-header">
+    <div>
+      <div class="breadcrumb" onclick="goAdmin()">← Command Center</div>
+      <div class="inv-host" id="invHostName">Server-HWA</div>
+      <div class="inv-sub" id="invHostSub">10.6.1.7 · DOMAIN-WATER-7 · Windows Server 2008 R2</div>
+      <div class="cli-line">▸ <b>$ sentinel investigate --host</b> <span id="invCliHost">SRV-HWA</span> <b>--packet</b> <span id="invCliPkt">HWA-P1</span></div>
+    </div>
+    <div style="text-align:right;"><div class="statelabel-chip" id="invStageChip">Lateral Movement</div>
+      <div class="leadtime-sub" style="margin-top:6px;">host risk <b id="invHostRisk" style="color:var(--text);">91%</b></div></div>
+  </div>
+
+  <div class="inv-row2">
+    <div class="panel">
+      <div class="panel-title">Flagged Node Network <span style="font-weight:400;text-transform:none;color:var(--muted2);">hosts above the 40% risk threshold, click to focus</span></div>
+      <svg class="flagnet" viewBox="0 0 480 260" id="flagNetSvg"></svg>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Flagged Packets <span style="font-weight:400;text-transform:none;color:var(--muted2);">ranked by infiltration probability · click a row</span></div>
+      <div class="pkt-scrollbox">
+        <table class="pkt-table" id="flaggedPktTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Packet Forecast — State Trajectory &nbsp;<span style="font-weight:400;text-transform:none;color:var(--muted2);">RSSM rollout for <b id="trajPktTag" style="color:var(--text);">HWA-P1</b> — observed → current → predicted, click a step</span></div>
+    <div class="step-row" id="stepRow"></div>
+    <svg class="step-spark" viewBox="0 0 700 46" id="stepSpark"></svg>
+  </div>
+
+  <div class="explain-grid" style="grid-template-columns:repeat(5,1fr);">
+    <div class="ex-card"><div class="ex-title">Feature vector <span id="featStepTag" style="color:var(--muted2);text-transform:none;"></span></div><div id="featList"></div></div>
+    <div class="ex-card"><div class="ex-title">SHAP — top drivers</div><div id="shapBars"></div></div>
+    <div class="ex-card"><div class="ex-title">Attention weights (past 10 windows)</div><div class="att-strip" id="attStrip"></div>
+      <div style="color:var(--muted2);font-size:9.5px;margin-top:8px;">darker = more weight on this past window</div></div>
+    <div class="ex-card"><div class="ex-title">Lead Time</div><div class="leadtime-num" id="leadTimeNum">4 steps</div>
+      <div class="leadtime-sub" id="leadTimeSub">≈ 40s before predicted compromise — vs. 0 for the non-temporal baseline</div></div>
+    <div class="ex-card"><div class="ex-title">State Label &amp; Confidence</div><div class="statelabel-chip" id="stepStageChip">Lateral Movement</div>
+      <div class="leadtime-sub" id="stepConfSub" style="margin-top:8px;">Stage-head confidence: 0.81 &nbsp;·&nbsp; monotonic constraint satisfied</div></div>
+  </div>
+
+  <div class="footer-audit"><span>audit log: immutable · hash-chained · consensus-verified</span><span>generated from RSSM prior rollout, K=5</span></div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const hosts = {
+  HWA:  {id:'HWA', label:'Server-HWA', type:'server', x:400, y:110, sub:'.7', risk:91, riskStart:22, ip:'10.6.1.7', domain:'DOMAIN-WATER-7', os:'Windows Server 2008 R2',
+         radar:[0.9,0.6,0.8,0.85,0.7], stage:'Lateral Movement',
+         shap:[['Port entropy',88],['SYN/ACK ratio',76],['Fan-out',64],['IAT variance',49]]},
+  DONALD:{id:'DONALD', label:'Server-DONALD', type:'server', x:490, y:170, sub:'.20', risk:54, riskStart:18, ip:'10.6.1.20', domain:'DOMAIN-WATER-7', os:'Windows Server 2012',
+         radar:[0.4,0.5,0.3,0.4,0.55], stage:'Reconnaissance',
+         shap:[['Sequential scan',66],['Fan-out',58],['Port entropy',44],['IAT variance',30]]},
+  LON:  {id:'LON', label:'Server-LON', type:'server', x:400, y:300, sub:'.4', risk:68, riskStart:15, ip:'10.6.2.4', domain:'DOMAIN-WATER-7', os:'Windows Server 2016',
+         radar:[0.5,0.4,0.6,0.55,0.45], stage:'C2 (suspected)',
+         shap:[['Beacon periodicity',71],['Byte volume (low)',54],['ASN novelty',40],['Fan-out',22]]},
+  ROBBYN:{id:'ROBBYN', label:'Server-ROBBYN', type:'server', x:490, y:355, sub:'.31', risk:14, riskStart:10, ip:'10.6.2.31', domain:'DOMAIN-WATER-7', os:'Windows Server 2019',
+         radar:[0.15,0.1,0.2,0.15,0.1], stage:'Nominal',
+         shap:[['Within baseline',12],['—',0],['—',0],['—',0]]},
+  DB:   {id:'DB', label:'DB-FIN', type:'db', x:690, y:110, sub:'.9', risk:47, riskStart:20, ip:'10.6.5.9', domain:'FIN-WS', os:'MSSQL 2019',
+         radar:[0.35,0.3,0.4,0.45,0.3], stage:'Access (watch)',
+         shap:[['Off-hours query burst',49],['Fan-out (in)',33],['Byte volume',24],['—',0]]},
+  PCEMIKO:{id:'PCEMIKO', label:'PC-EMIKO', type:'pc', x:690, y:290, sub:'.14', risk:22, riskStart:14, ip:'10.6.5.14', domain:'FIN-WS', os:'Windows 10',
+         radar:[0.2,0.15,0.1,0.2,0.15], stage:'Nominal',
+         shap:[['Within baseline',15],['—',0],['—',0],['—',0]]},
+  EXT1: {id:'EXT1', label:'61.78.106.18', type:'ext', x:55, y:210, sub:'', risk:35, riskStart:30, ip:'61.78.106.18', domain:'external', os:'—',
+         radar:[0.3,0.2,0.35,0.5,0.2], stage:'Initial Access',
+         shap:[['Geo anomaly',52],['New ASN',41],['Conn. frequency',30],['TTL variance',18]]}
+};
+const infra = {
+  FW:{id:'FW', label:'FW-EDGE', type:'firewall', x:160, y:210, sub:'1,204 blocked/hr'},
+  RTR:{id:'RTR', label:'RTR-CORE', type:'router', x:265, y:210, sub:'12.4k pkt/s'}
+};
+const subnets = [
+  {label:'10.6.1.0/24 · IT-OPS', x:340, y:40, w:220, h:180},
+  {label:'10.6.2.0/24 · DMZ-SVC', x:340, y:250, w:220, h:150},
+  {label:'10.6.5.0/24 · FIN-WS', x:630, y:40, w:200, h:340}
+];
+const edges = [
+  ['EXT1','FW','', 'infra'], ['FW','RTR','', 'infra'], ['RTR','HWA','GW','infra'], ['RTR','LON','GW','infra'],
+  ['HWA','DONALD','SMB'], ['LON','ROBBYN','DNS'], ['DONALD','PCEMIKO','SMB'], ['DONALD','DB','SQL'], ['HWA','DB','SQL']
+];
+const typeColor = {server:'var(--violet)', pc:'var(--amber)', ext:'var(--teal)', db:'var(--grey)'};
+let selectedHost = 'HWA';
+let scrubT = 0;
+function riskColor(r){ if(r>75) return 'var(--critical)'; if(r>40) return 'var(--watch)'; return 'var(--safe)'; }
+
+/* ================= SHARED: STAGE MODEL ================= */
+/* Every part of the dashboard (pies, packet tables, trajectories) reads probability
+   through this single mapping, so the "story" stays consistent as you scrub or drill in. */
+const STAGES = [
+  {key:'nominal', label:'Nominal',            cls:'stage-nominal', min:0.00},
+  {key:'recon',   label:'Reconnaissance',     cls:'stage-recon',   min:0.20},
+  {key:'access',  label:'Initial Access',     cls:'stage-access',  min:0.40},
+  {key:'lateral', label:'Lateral Movement',   cls:'stage-lateral', min:0.60},
+  {key:'c2',      label:'C2 (suspected)',     cls:'stage-c2',      min:0.78},
+  {key:'exfil',   label:'Exfiltration',       cls:'stage-exfil',   min:0.92}
+];
+function stageForProb(p){ let s=STAGES[0]; for(const st of STAGES){ if(p>=st.min) s=st; } return s; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* deterministic seeded PRNG so tables/graphs don't jitter on every re-render */
+function seeded(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; } return function(){ h=Math.imul(h^h>>>16,2246822519); h=Math.imul(h^h>>>13,3266489917); h^=h>>>16; return (h>>>0)/4294967296; }; }
+
+/* ================= PACKET SYNTHESIS ================= */
+const PROTOS=['TCP','TCP','TCP','UDP','ICMP'];
+const FLAGSETS=['SYN','SYN,ACK','PSH,ACK','FIN,ACK','RST,ACK','ACK'];
+const PORTS=[22,445,3389,443,8080,53,135,4444];
+const EXT_IPS=['61.78.106.18','185.220.101.4','103.44.9.212','45.146.164.3','91.219.237.5'];
+const FEATURE_NAMES=['Port entropy','SYN/ACK ratio','Fan-out','IAT variance','Byte volume (KB)','TTL variance','Beacon periodicity','Retransmit rate'];
+
+// base per-host packets for the *current* window (t=0), used to derive everything else
+function genHostPackets(h, n){
+  const rnd = seeded('pkt-'+h.id);
+  const arr=[];
+  for(let i=0;i<n;i++){
+    const jitter = (rnd()-0.5)*0.22;
+    const prob = clamp(h.risk/100 + jitter, 0.02, 0.985);
+    const isInbound = i%2===0;
+    arr.push({
+      id: h.id+'-P'+(i+1),
+      hostId: h.id,
+      hostLabel: h.label,
+      src: isInbound ? (h.type==='ext' ? h.ip : sampleIp(rnd)) : h.ip,
+      dst: isInbound ? h.ip : (h.type==='ext' ? sampleIp(rnd) : sampleIp(rnd)),
+      port: PORTS[Math.floor(rnd()*PORTS.length)],
+      proto: PROTOS[Math.floor(rnd()*PROTOS.length)],
+      flags: FLAGSETS[Math.floor(rnd()*FLAGSETS.length)],
+      bytes: Math.round(180 + rnd()*4600),
+      tsOffset: -(n-i)*3,
+      probability: prob
+    });
+  }
+  return arr;
+}
+function sampleIp(rnd){ return rnd()<0.4 ? EXT_IPS[Math.floor(rnd()*EXT_IPS.length)] : '10.6.'+(1+Math.floor(rnd()*5))+'.'+(2+Math.floor(rnd()*250)); }
+
+const hostPacketsBase = {}; // cached per host, generated once
+Object.values(hosts).forEach(h=>{ hostPacketsBase[h.id] = genHostPackets(h, 6); });
+
+// packets for the current scrub window t (0..10): probabilities drift toward the host's
+// forecast risk (riskAt) and toward later ATT&CK stages as t grows.
+function packetsAtWindow(t){
+  const out=[];
+  Object.values(hosts).forEach(h=>{
+    const rv = riskAt(h,t)/100;
+    hostPacketsBase[h.id].forEach(p=>{
+      const drift = (rv - h.risk/100);
+      out.push(Object.assign({}, p, { probability: clamp(p.probability + drift, 0.01, 0.99) }));
+    });
+  });
+  return out;
+}
+
+// per-packet 5-step forward trajectory (the "world model rollout" for one packet)
+function packetTrajectory(p){
+  const rnd = seeded('traj-'+p.id);
+  const steps=[];
+  const totalRise = clamp(0.85 - p.probability, 0.03, 0.6) * (0.55 + rnd()*0.5);
+  for(let s=0;s<=5;s++){
+    const prob = clamp(p.probability + totalRise*(s/5) + (s>0?(rnd()-0.5)*0.03:0), 0.01, 0.99);
+    const stage = stageForProb(prob);
+    const feats = {};
+    FEATURE_NAMES.forEach((fn,fi)=>{
+      const base = 0.15 + (fi%3)*0.1 + prob*0.6;
+      feats[fn] = Math.round(clamp(base + (rnd()-0.5)*0.12 + s*0.03, 0.02, 0.99)*100)/100;
+    });
+    const shap = FEATURE_NAMES.slice(0,4).map(fn=> [fn, Math.round(clamp(feats[fn]*100 + (rnd()-0.5)*10,4,98))]).sort((a,b)=>b[1]-a[1]);
+    const attention = Array.from({length:10},(_,i)=> clamp(rnd()*0.5 + (i>6? (0.3+s*0.06):0.05), 0.03, 1));
+    steps.push({ step:s, label: s===0?'current':('t+'+(s*10)+'s'), tag: s===0?'current':'predicted', probability:prob, stage, features:feats, shap, attention });
+  }
+  return steps;
+}
+function leadTimeFor(steps){
+  const hit = steps.find(s=>s.step>0 && s.probability>=0.9);
+  if(hit) return { steps: hit.step, seconds: hit.step*10 };
+  return null;
+}
+
+function riskAt(h,t){ return h.riskStart + (h.risk - h.riskStart) * (t/10); }
+
+/* ================= LOGIN ================= */
+let pendingRole = null;
+function pickRole(r){
+  pendingRole = r;
+  document.getElementById('roleAdmin').classList.toggle('picked', r==='admin');
+  document.getElementById('roleInv').classList.toggle('picked', r==='inv');
+  document.getElementById('credBox').classList.add('show');
+}
+function authenticate(){
+  if(pendingRole==='inv'){ selectHost('HWA'); showScreen('investigation'); renderInvestigation(); }
+  else { showScreen('admin'); renderAdmin(); }
+}
+function goLogin(){ showScreen('login'); }
+function goAdmin(){ showScreen('admin'); renderAdmin(); }
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function setListTab(t){ ['tabFlagged','tabMonitored','tabAll'].forEach(id=>document.getElementById(id).classList.remove('on')); document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('on'); }
+
+/* ================= ADMIN RENDER ================= */
+function renderAdmin(){
+  drawTopology(scrubT);
+  renderInfoPanel();
+  renderRadar();
+  renderFlaggedList();
+  drawPies(scrubT);
+  drawTimeseries(scrubT);
+  renderWindowPacketTable(scrubT);
+}
+
+function windowTagText(t){ return t===0 ? 'now' : ('t+'+(t*4)+'s'); }
+
+function scrubTopo(v){
+  scrubT = parseInt(v);
+  const tag = windowTagText(scrubT);
+  document.getElementById('scrubTag').textContent = tag;
+  ['pieStageTag','pieSevTag','tsWindowTag'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = tag; });
+  drawTopology(scrubT);
+  drawPies(scrubT);
+  drawTimeseries(scrubT);
+  renderWindowPacketTable(scrubT);
+}
+
+function drawTopology(t){
+  const svg = document.getElementById('topoSvg');
+  svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+
+  subnets.forEach(s=>{
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',s.x); r.setAttribute('y',s.y); r.setAttribute('width',s.w); r.setAttribute('height',s.h);
+    r.setAttribute('rx',6); r.setAttribute('class','subnet-box');
+    svg.appendChild(r);
+    const lb=document.createElementNS(ns,'text');
+    lb.setAttribute('x',s.x+8); lb.setAttribute('y',s.y+14); lb.setAttribute('class','subnet-label');
+    lb.textContent=s.label; svg.appendChild(lb);
+  });
+
+  const allNodes = Object.assign({}, hosts, infra);
+  edges.forEach(([a,b,lbl,cls])=>{
+    const ha=allNodes[a], hb=allNodes[b];
+    const line=document.createElementNS(ns,'line');
+    line.setAttribute('x1',ha.x); line.setAttribute('y1',ha.y); line.setAttribute('x2',hb.x); line.setAttribute('y2',hb.y);
+    line.setAttribute('class','edge'+(cls==='infra'?' infra':'')+((a===selectedHost||b===selectedHost)?' hi':''));
+    svg.appendChild(line);
+    if(lbl){ const tx=document.createElementNS(ns,'text'); tx.setAttribute('x',(ha.x+hb.x)/2); tx.setAttribute('y',(ha.y+hb.y)/2-4); tx.setAttribute('class','edge-label'); tx.textContent=lbl; svg.appendChild(tx); }
+  });
+
+  // firewall + router (infra shapes, neutral color)
+  Object.values(infra).forEach(n=>{
+    const g=document.createElementNS(ns,'g'); g.setAttribute('class','node');
+    if(n.type==='firewall'){
+      const rct=document.createElementNS(ns,'rect');
+      rct.setAttribute('x',n.x-11); rct.setAttribute('y',n.y-11); rct.setAttribute('width',22); rct.setAttribute('height',22);
+      rct.setAttribute('fill','var(--fw)'); rct.setAttribute('transform',`rotate(45 ${n.x} ${n.y})`);
+      g.appendChild(rct);
+    } else {
+      const poly=document.createElementNS(ns,'polygon');
+      const pts=[[-13,0],[-6,-11],[6,-11],[13,0],[6,11],[-6,11]].map(p=>(n.x+p[0])+','+(n.y+p[1])).join(' ');
+      poly.setAttribute('points',pts); poly.setAttribute('fill','var(--infra)');
+      g.appendChild(poly);
+    }
+    const t=document.createElementNS(ns,'text'); t.setAttribute('x',n.x); t.setAttribute('y',n.y+28); t.setAttribute('class','node-lbl'); t.textContent=n.label;
+    const t2=document.createElementNS(ns,'text'); t2.setAttribute('x',n.x); t2.setAttribute('y',n.y+39); t2.setAttribute('class','node-sub'); t2.textContent=n.sub;
+    g.appendChild(t); g.appendChild(t2);
+    svg.appendChild(g);
+  });
+
+  // hosts, colored by forecast risk at scrub position t
+  Object.values(hosts).forEach(h=>{
+    const rv = riskAt(h,t);
+    const g=document.createElementNS(ns,'g'); g.setAttribute('class','node');
+    const r = 13 + (rv/100)*9;
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',h.x); c.setAttribute('cy',h.y); c.setAttribute('r', h.id===selectedHost? r+4 : r);
+    c.setAttribute('fill', riskColor(rv));
+    c.setAttribute('fill-opacity','0.88');
+    c.setAttribute('stroke', h.id===selectedHost ? 'var(--sel)' : typeColor[h.type]);
+    c.setAttribute('stroke-width', h.id===selectedHost ? '3' : '2');
+    if(rv>75){ c.style.filter='drop-shadow(0 0 6px '+riskColor(rv)+')'; }
+    g.appendChild(c);
+    const tmark=document.createElementNS(ns,'text'); tmark.setAttribute('x',h.x); tmark.setAttribute('y',h.y+3.5);
+    tmark.setAttribute('text-anchor','middle'); tmark.setAttribute('font-size','7.5'); tmark.setAttribute('fill','#08101f'); tmark.setAttribute('font-family','IBM Plex Mono');
+    tmark.textContent = Math.round(rv);
+    g.appendChild(tmark);
+    const t2=document.createElementNS(ns,'text'); t2.setAttribute('x',h.x); t2.setAttribute('y',h.y+r+14); t2.setAttribute('class','node-lbl'); t2.textContent=h.label;
+    g.appendChild(t2);
+    g.addEventListener('click', ()=>{ selectHost(h.id); renderAdmin(); });
+    svg.appendChild(g);
+  });
+}
+
+function selectHost(id){ selectedHost = id; }
+
+function renderInfoPanel(){
+  const h = hosts[selectedHost];
+  document.getElementById('infoPanel').innerHTML = `
+    <div class="info-host">${h.label}</div>
+    <div class="info-tags"><span class="tag risk">${h.risk}% risk</span><span class="tag">${h.stage}</span><span class="tag">${h.type.toUpperCase()}</span></div>
+    <div class="info-row"><span>IP address</span><b>${h.ip}</b></div>
+    <div class="info-row"><span>Domain / subnet</span><b>${h.domain}</b></div>
+    <div class="info-row"><span>OS / Platform</span><b>${h.os}</b></div>
+    <button class="investigate-btn" onclick="goInvestigate('${h.id}')">Open in Investigation →</button>`;
+}
+
+function renderRadar(){
+  const h = hosts[selectedHost];
+  const svg = document.getElementById('radarSvg'); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg'; const cx=100, cy=80, R=58;
+  const labels=['Malware','Sequence','Link','Network','Lateral Mv.'];
+  const angle = i => -Math.PI/2 + i*(2*Math.PI/5);
+  for(let ring=1; ring<=3; ring++){
+    let pts=''; for(let i=0;i<5;i++){ const a=angle(i); pts += (cx+Math.cos(a)*R*ring/3)+','+(cy+Math.sin(a)*R*ring/3)+' '; }
+    const poly=document.createElementNS(ns,'polygon'); poly.setAttribute('points',pts); poly.setAttribute('class','radar-grid'); svg.appendChild(poly);
+  }
+  let shapePts=''; h.radar.forEach((v,i)=>{ const a=angle(i); shapePts += (cx+Math.cos(a)*R*v)+','+(cy+Math.sin(a)*R*v)+' '; });
+  const shape=document.createElementNS(ns,'polygon'); shape.setAttribute('points',shapePts); shape.setAttribute('class','radar-shape'); svg.appendChild(shape);
+  labels.forEach((lb,i)=>{ const a=angle(i); const t=document.createElementNS(ns,'text'); t.setAttribute('x',cx+Math.cos(a)*(R+16)); t.setAttribute('y',cy+Math.sin(a)*(R+16)+3); t.setAttribute('class','radar-lbl'); t.textContent=lb; svg.appendChild(t); });
+}
+
+function renderFlaggedList(){
+  const wrap = document.getElementById('flaggedList');
+  const sorted = Object.values(hosts).slice().sort((a,b)=>b.risk-a.risk);
+  document.getElementById('flagCount').textContent = '('+sorted.filter(h=>h.risk>40).length+')';
+  wrap.innerHTML='';
+  sorted.forEach(h=>{
+    if(h.risk<=40) return;
+    const div=document.createElement('div'); div.className='flag-item';
+    div.innerHTML = `<span class="flag-name">${h.label}</span><span class="flag-score ${h.risk>75?'critical':'watch'}">${(h.risk/100).toFixed(2)}</span>`;
+    div.onclick = ()=>{ selectHost(h.id); renderAdmin(); };
+    wrap.appendChild(div);
+  });
+}
+
+/* ---- pie charts ---- */
+function donut(svgId, legendId, segments, subLabel){
+  const svg=document.getElementById(svgId); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg'; const cx=60,cy=60,r=45, circ=2*Math.PI*r;
+  const total = segments.reduce((s,x)=>s+x.value,0) || 1;
+  let offset=0;
+  segments.forEach(seg=>{
+    const frac = seg.value/total; const len = frac*circ;
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r',r);
+    c.setAttribute('fill','none'); c.setAttribute('stroke',seg.color); c.setAttribute('stroke-width','16');
+    c.setAttribute('stroke-dasharray', len+' '+(circ-len));
+    c.setAttribute('stroke-dashoffset', -offset);
+    c.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    svg.appendChild(c);
+    offset += len;
+  });
+  const t=document.createElementNS(ns,'text'); t.setAttribute('x',cx); t.setAttribute('y',cy+2); t.setAttribute('class','pie-center'); t.textContent=total; svg.appendChild(t);
+  const t2=document.createElementNS(ns,'text'); t2.setAttribute('x',cx); t2.setAttribute('y',cy+15); t2.setAttribute('class','pie-center-sub'); t2.textContent=subLabel||'hosts'; svg.appendChild(t2);
+  const leg=document.getElementById(legendId); leg.innerHTML='';
+  segments.forEach(seg=>{ leg.innerHTML += `<div class="pl-row"><span><span class="dot" style="background:${seg.color}"></span>${seg.label}</span><span>${seg.value}</span></div>`; });
+}
+/* stage distribution interpolates from the observed mix (t=0) toward a mix weighted
+   toward C2/Exfil at the far edge of the forecast horizon (t=10) — this is what makes
+   the pie visibly "move" as the topology risk propagates forward. */
+const stageDistNow  = {Recon:14, Access:6, Lateral:3, C2:2, Exfil:0};
+const stageDistFar   = {Recon:5,  Access:5, Lateral:8, C2:9, Exfil:5};
+function stageDistAt(t){
+  const f = t/10;
+  const out={};
+  Object.keys(stageDistNow).forEach(k=>{ out[k] = Math.round(stageDistNow[k] + (stageDistFar[k]-stageDistNow[k])*f); });
+  return out;
+}
+function drawPies(t){
+  const d = stageDistAt(t);
+  donut('pieStage','pieStageLegend',[
+    {label:'Recon', value:d.Recon, color:'var(--safe)'},
+    {label:'Access', value:d.Access, color:'var(--teal)'},
+    {label:'Lateral', value:d.Lateral, color:'var(--watch)'},
+    {label:'C2', value:d.C2, color:'#E27D4A'},
+    {label:'Exfil', value:d.Exfil, color:'var(--critical)'}
+  ], 'stage forecast');
+  const crit = Object.values(hosts).filter(h=>riskAt(h,t)>75).length;
+  const elev = Object.values(hosts).filter(h=>{ const r=riskAt(h,t); return r>40 && r<=75; }).length;
+  const nom = Object.values(hosts).filter(h=>riskAt(h,t)<=40).length;
+  donut('pieSeverity','pieSeverityLegend',[
+    {label:'Critical', value:crit, color:'var(--critical)'},
+    {label:'Elevated', value:elev, color:'var(--watch)'},
+    {label:'Nominal', value:nom, color:'var(--safe)'}
+  ], 'hosts');
+}
+
+/* ---- timeseries: observed history (fixed) + forecast tail that scrub reveals ---- */
+function genSeries(n, base, amp, seedStr){ const rnd=seeded(seedStr); const arr=[]; let v=base; for(let i=0;i<n;i++){ v += (rnd()-0.42)*amp; v=Math.max(base*0.4,v); arr.push(v); } return arr; }
+const N_OBS=30, N_FC=10;
+const seriesObs = {
+  flows:   genSeries(N_OBS, 55, 10, 'obs-flows'),
+  packets: genSeries(N_OBS, 40, 9,  'obs-packets'),
+  bytes:   genSeries(N_OBS, 65, 12, 'obs-bytes')
+};
+// forecast tail trends upward with overall network risk (C2/exfil = more, bursty traffic)
+function genForecastTail(lastVal, n, riseAmp, seedStr){
+  const rnd=seeded(seedStr); const arr=[]; let v=lastVal;
+  for(let i=0;i<n;i++){ v += riseAmp*(0.5+rnd()*0.9); arr.push(Math.min(100, v)); }
+  return arr;
+}
+const seriesFc = {
+  flows:   genForecastTail(seriesObs.flows[N_OBS-1], N_FC, 2.1, 'fc-flows'),
+  packets: genForecastTail(seriesObs.packets[N_OBS-1], N_FC, 2.6, 'fc-packets'),
+  bytes:   genForecastTail(seriesObs.bytes[N_OBS-1], N_FC, 3.0, 'fc-bytes')
+};
+function valueAtScrub(key,t){ return t===0 ? seriesObs[key][N_OBS-1] : seriesFc[key][t-1]; }
+function drawTimeseries(t){
+  document.getElementById('tsFlowsVal').textContent = Math.round(valueAtScrub('flows',t)*14)+'/s';
+  document.getElementById('tsPacketsVal').textContent = Math.round(valueAtScrub('packets',t)*1.8)+'k/s';
+  document.getElementById('tsBytesVal').textContent = Math.round(valueAtScrub('bytes',t)*5.4)+' Mb/s';
+  const svg=document.getElementById('tsChart'); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  const w=700,h=110,pad=10, totalPts = N_OBS + N_FC;
+  const xAt = i => pad+(w-2*pad)*i/(totalPts-1);
+  const yAt = v => h-pad-(v/100)*(h-2*pad);
+  function pathObs(arr,cls){
+    let d='M'; arr.forEach((v,i)=>{ d+= (i===0?'':'L')+xAt(i)+','+yAt(v)+' '; });
+    const p=document.createElementNS(ns,'path'); p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke-width','2'); p.setAttribute('class',cls); svg.appendChild(p);
+  }
+  function pathFc(arrFull,cls,upto){
+    if(upto<=0) return;
+    let d='M'+xAt(N_OBS-1)+','+yAt(arrFull.obs[N_OBS-1]);
+    for(let i=0;i<upto;i++){ d+='L'+xAt(N_OBS+i)+','+yAt(arrFull.fc[i])+' '; }
+    const p=document.createElementNS(ns,'path'); p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke-width','2'); p.setAttribute('stroke-dasharray','4 3'); p.setAttribute('class',cls); p.setAttribute('opacity','0.85'); svg.appendChild(p);
+  }
+  pathObs(seriesObs.flows,'line-flows'); pathObs(seriesObs.packets,'line-packets'); pathObs(seriesObs.bytes,'line-bytes');
+  pathFc({obs:seriesObs.flows, fc:seriesFc.flows}, 'line-flows', t);
+  pathFc({obs:seriesObs.packets, fc:seriesFc.packets}, 'line-packets', t);
+  pathFc({obs:seriesObs.bytes, fc:seriesFc.bytes}, 'line-bytes', t);
+  // scrub marker
+  const markerX = t===0 ? xAt(N_OBS-1) : xAt(N_OBS-1+t);
+  const ml=document.createElementNS(ns,'line'); ml.setAttribute('x1',markerX); ml.setAttribute('x2',markerX); ml.setAttribute('y1',6); ml.setAttribute('y2',110); ml.setAttribute('class','now-line'); svg.appendChild(ml);
+  const mt=document.createElementNS(ns,'text'); mt.setAttribute('x',markerX+4); mt.setAttribute('y',18); mt.setAttribute('class','now-tag'); mt.textContent=windowTagText(t); svg.appendChild(mt);
+  const ax=document.createElementNS(ns,'text'); ax.setAttribute('x',8); ax.setAttribute('y',128); ax.setAttribute('class','axis-label'); ax.textContent='-60s'; svg.appendChild(ax);
+  const ax2=document.createElementNS(ns,'text'); ax2.setAttribute('x',xAt(N_OBS-1)-10); ax2.setAttribute('y',128); ax2.setAttribute('class','axis-label'); ax2.textContent='now'; svg.appendChild(ax2);
+  const ax3=document.createElementNS(ns,'text'); ax3.setAttribute('x',655); ax3.setAttribute('y',128); ax3.setAttribute('class','axis-label'); ax3.textContent='+40s'; svg.appendChild(ax3);
+}
+
+/* ---- packet table for the currently-scrubbed traffic window ---- */
+function renderWindowPacketTable(t){
+  const table = document.getElementById('windowPktTable');
+  const pkts = packetsAtWindow(t).sort((a,b)=>b.probability-a.probability).slice(0,12);
+  let rows = `<thead><tr><th>Host</th><th>Src → Dst</th><th>Port/Proto</th><th>Flags</th><th>Bytes</th><th>Probability</th><th>Stage</th></tr></thead><tbody>`;
+  pkts.forEach(p=>{
+    const st = stageForProb(p.probability);
+    rows += `<tr><td class="mono-strong">${p.hostLabel}</td><td>${p.src} → ${p.dst}</td><td>${p.port}/${p.proto}</td><td>${p.flags}</td><td>${p.bytes}</td>
+      <td><span class="prob-bar-bg"><span class="prob-bar" style="width:${Math.round(p.probability*100)}%;background:${riskColor(p.probability*100)}"></span></span>${(p.probability*100).toFixed(0)}%</td>
+      <td><span class="stagepill ${st.cls}">${st.label}</span></td></tr>`;
+  });
+  rows += '</tbody>';
+  table.innerHTML = rows;
+}
+
+function goInvestigate(id){ selectHost(id); showScreen('investigation'); renderInvestigation(); }
+
+/* ---- NL query ---- */
+const nlAnswers = {
+  "what is driving the risk on server-hwa?": "Server-HWA's risk is driven primarily by rising port entropy (0.88) and an anomalous SYN/ACK ratio (0.76), consistent with a lateral-movement scan pattern. The model projects an 87% infiltration probability within 40 seconds if unaddressed.",
+  "summarize current threats": "3 hosts are currently flagged: Server-HWA (91%, Lateral Movement), Server-LON (68%, suspected C2), DB-FIN (47%, off-hours query burst). No host has reached the Exfiltration stage yet.",
+  "recommended action": "Isolate Server-HWA's edges to the finance subnet — simulated isolation drops network-wide risk from 87.1% to 12.5%. Escalate Server-LON's beacon pattern to the threat-intel team for ASN attribution."
+};
+function askNL(){ showAnswer(document.getElementById('nlInput').value); }
+function chipAsk(q){ document.getElementById('nlInput').value = q; showAnswer(q); }
+function showAnswer(q){
+  const ans = nlAnswers[q.trim().toLowerCase()] || "I don't have a specific answer for that query in this demo — try one of the suggested questions above.";
+  const box = document.getElementById('nlAnswer'); box.textContent = ans; box.classList.add('show');
+}
+
+/* ================= INVESTIGATION RENDER ================= */
+let selectedPacketId = null;
+let selectedStep = 0;
+let flaggedPacketsCache = [];
+
+function flaggedHostIds(){ return Object.values(hosts).filter(h=>h.risk>40).map(h=>h.id); }
+
+function buildFlaggedPackets(){
+  const ids = new Set(flaggedHostIds());
+  let all=[];
+  Object.values(hosts).forEach(h=>{ if(ids.has(h.id)) all = all.concat(hostPacketsBase[h.id]); });
+  return all.sort((a,b)=>b.probability-a.probability);
+}
+
+function renderInvestigation(){
+  const h = hosts[selectedHost];
+  document.getElementById('invHostName').textContent = h.label;
+  document.getElementById('invHostSub').textContent = `${h.ip} · ${h.domain} · ${h.os}`;
+  document.getElementById('invCliHost').textContent = 'SRV-'+h.id;
+  document.getElementById('invStageChip').textContent = h.stage;
+  document.getElementById('invHostRisk').textContent = h.risk+'%';
+
+  flaggedPacketsCache = buildFlaggedPackets();
+  renderFlaggedNet();
+  renderFlaggedPacketTable();
+
+  // default selection: highest-probability packet belonging to the selected host,
+  // falling back to the single highest-probability flagged packet overall.
+  const hostPkts = flaggedPacketsCache.filter(p=>p.hostId===h.id);
+  const initial = hostPkts.length ? hostPkts[0] : flaggedPacketsCache[0];
+  if(initial) selectPacket(initial.id); else clearPacketDetail();
+}
+
+function renderFlaggedPacketTable(){
+  const table = document.getElementById('flaggedPktTable');
+  let rows = `<thead><tr><th>Host</th><th>Src → Dst</th><th>Port/Proto</th><th>Probability</th><th>Stage</th></tr></thead><tbody>`;
+  flaggedPacketsCache.forEach(p=>{
+    const st = stageForProb(p.probability);
+    const picked = p.id===selectedPacketId ? ' picked' : '';
+    rows += `<tr class="clickable${picked}" onclick="selectPacket('${p.id}')">
+      <td class="mono-strong">${p.hostLabel}</td><td>${p.src} → ${p.dst}</td><td>${p.port}/${p.proto}</td>
+      <td><span class="prob-bar-bg"><span class="prob-bar" style="width:${Math.round(p.probability*100)}%;background:${riskColor(p.probability*100)}"></span></span>${(p.probability*100).toFixed(0)}%</td>
+      <td><span class="stagepill ${st.cls}">${st.label}</span></td></tr>`;
+  });
+  rows += '</tbody>';
+  table.innerHTML = rows;
+}
+
+function selectPacket(id){
+  selectedPacketId = id;
+  selectedStep = 0;
+  const p = flaggedPacketsCache.find(x=>x.id===id) || Object.values(hostPacketsBase).flat().find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('trajPktTag').textContent = p.id;
+  document.getElementById('invCliPkt').textContent = p.id;
+  renderFlaggedPacketTable();
+  const traj = packetTrajectory(p);
+  window._activeTrajectory = traj;
+  window._activeLeadTime = leadTimeFor(traj);
+  renderStepRow(traj);
+  renderStepSpark(traj);
+  applyStep(traj, 0);
+}
+
+function clearPacketDetail(){
+  document.getElementById('stepRow').innerHTML='';
+  document.getElementById('stepSpark').innerHTML='';
+  document.getElementById('featList').innerHTML='';
+  document.getElementById('shapBars').innerHTML='';
+  document.getElementById('attStrip').innerHTML='';
+}
+
+function renderStepRow(traj){
+  const wrap = document.getElementById('stepRow'); wrap.innerHTML='';
+  traj.forEach((s,i)=>{
+    const cls = i===0 ? 'current' : 'predicted';
+    const div=document.createElement('button'); div.className='step-node '+cls+(i===selectedStep?' active':'');
+    div.innerHTML = `<div class="step-line"></div><div class="step-circle">${i===0?'NOW':'S'+i}</div>
+      <div class="step-tag">${i===0?'current':s.label}</div>
+      <div class="step-prob" style="color:${riskColor(s.probability*100)}">${(s.probability*100).toFixed(0)}%</div>`;
+    div.onclick = ()=>applyStep(traj, i);
+    wrap.appendChild(div);
+  });
+}
+
+function renderStepSpark(traj){
+  const svg=document.getElementById('stepSpark'); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  const w=700,h=46,pad=6;
+  const xAt=i=>pad+(w-2*pad)*i/(traj.length-1);
+  const yAt=v=>h-pad-(v)*(h-2*pad-6);
+  let d='M'; traj.forEach((s,i)=>{ d+=(i===0?'':'L')+xAt(i)+','+yAt(s.probability)+' '; });
+  const p=document.createElementNS(ns,'path'); p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke','var(--sel)'); p.setAttribute('stroke-width','1.6'); svg.appendChild(p);
+  traj.forEach((s,i)=>{
+    const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',xAt(i)); c.setAttribute('cy',yAt(s.probability)); c.setAttribute('r', i===selectedStep?4:2.5);
+    c.setAttribute('fill', riskColor(s.probability*100)); c.style.cursor='pointer';
+    c.addEventListener('click', ()=>applyStep(traj,i));
+    svg.appendChild(c);
+  });
+}
+
+function applyStep(traj, i){
+  selectedStep = i;
+  const s = traj[i];
+  document.querySelectorAll('#stepRow .step-node').forEach((el,idx)=>el.classList.toggle('active', idx===i));
+  document.querySelectorAll('#stepSpark circle').forEach((el,idx)=>el.setAttribute('r', idx===i?4:2.5));
+
+  document.getElementById('featStepTag').textContent = '· '+(i===0?'current':s.label);
+  const featList = document.getElementById('featList'); featList.innerHTML='';
+  Object.entries(s.features).forEach(([name,val])=>{
+    featList.innerHTML += `<div class="feat-row"><span>${name}</span><b>${val}</b></div>`;
+  });
+
+  const shapWrap = document.getElementById('shapBars'); shapWrap.innerHTML='';
+  s.shap.forEach(([name,val])=>{ shapWrap.innerHTML += `<div class="shap-row"><div class="shap-name">${name}</div><div class="shap-bar-bg"><div class="shap-bar" style="width:${val}%"></div></div></div>`; });
+
+  const att = document.getElementById('attStrip'); att.innerHTML='';
+  s.attention.forEach(v=>{ att.innerHTML += `<div class="att-bar" style="height:${Math.min(100,v*100)}%;opacity:${Math.min(1,v+0.2)}"></div>`; });
+
+  document.getElementById('stepStageChip').textContent = s.stage.label;
+  document.getElementById('stepStageChip').style.borderColor = `var(${s.stage.key==='c2'?'--fw':s.stage.key==='exfil'?'--critical':s.stage.key==='lateral'?'--watch':s.stage.key==='access'?'--teal':s.stage.key==='recon'?'--safe':'--muted'})`;
+  document.getElementById('stepStageChip').style.color = document.getElementById('stepStageChip').style.borderColor;
+  document.getElementById('stepConfSub').innerHTML = `Stage-head confidence: ${(0.6+s.probability*0.35).toFixed(2)} &nbsp;·&nbsp; step t+${i*10}s`;
+
+  const lt = window._activeLeadTime;
+  document.getElementById('leadTimeNum').textContent = lt ? lt.steps+' steps' : '> 5 steps';
+  document.getElementById('leadTimeSub').textContent = lt
+    ? `≈ ${lt.seconds}s before predicted compromise — vs. 0 for the non-temporal baseline`
+    : `no compromise crossing (≥90%) within the 5-step rollout horizon`;
+}
+
+/* ---- flagged-node network graph (investigator mode) ---- */
+function renderFlaggedNet(){
+  const svg = document.getElementById('flagNetSvg'); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  const flagged = Object.values(hosts).filter(h=>h.risk>40);
+  if(!flagged.length){ svg.outerHTML = '<div class="flagged-net-empty">No hosts currently above the flagged-risk threshold.</div>'; return; }
+  const cx=240, cy=118, R = flagged.length>1 ? 76 : 0;
+  const pos={};
+  flagged.forEach((h,i)=>{ const a=-Math.PI/2 + i*(2*Math.PI/flagged.length); pos[h.id]=[cx+Math.cos(a)*R, cy+Math.sin(a)*R]; });
+  // edges between flagged hosts only, using the real topology edge list
+  edges.forEach(([a,b])=>{
+    if(pos[a] && pos[b]){
+      const l=document.createElementNS(ns,'line'); l.setAttribute('x1',pos[a][0]); l.setAttribute('y1',pos[a][1]); l.setAttribute('x2',pos[b][0]); l.setAttribute('y2',pos[b][1]);
+      l.setAttribute('class','edge hi'); svg.appendChild(l);
+    }
+  });
+  flagged.forEach(h=>{
+    const [x,y]=pos[h.id];
+    const g=document.createElementNS(ns,'g'); g.setAttribute('class','node');
+    const r = h.id===selectedHost ? 22 : 17;
+    const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',r);
+    c.setAttribute('fill', riskColor(h.risk)); c.setAttribute('fill-opacity','0.9');
+    c.setAttribute('stroke', h.id===selectedHost?'var(--sel)':typeColor[h.type]); c.setAttribute('stroke-width', h.id===selectedHost?'3':'2');
+    if(h.risk>75) c.style.filter='drop-shadow(0 0 6px '+riskColor(h.risk)+')';
+    g.appendChild(c);
+    const tm=document.createElementNS(ns,'text'); tm.setAttribute('x',x); tm.setAttribute('y',y+4); tm.setAttribute('text-anchor','middle'); tm.setAttribute('font-size','8'); tm.setAttribute('fill','#08101f'); tm.setAttribute('font-family','IBM Plex Mono'); tm.textContent=h.risk; g.appendChild(tm);
+    const t=document.createElementNS(ns,'text'); t.setAttribute('x',x); t.setAttribute('y',y+r+13); t.setAttribute('class','fn-lbl'); t.textContent=h.label; g.appendChild(t);
+    const t2=document.createElementNS(ns,'text'); t2.setAttribute('x',x); t2.setAttribute('y',y+r+24); t2.setAttribute('class','fn-sub'); t2.textContent=h.stage; g.appendChild(t2);
+    g.addEventListener('click', ()=>{ selectHost(h.id); renderInvestigation(); });
+    svg.appendChild(g);
+  });
+}
+
+document.getElementById('nlInput').addEventListener('keydown', e=>{ if(e.key==='Enter') askNL(); });
+</script>
+</body>
+</html>

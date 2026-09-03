@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OcuNet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Product palette derived from the provided color scheme reference
+      // (the classic "Flat UI" set: Belize Hole, Pomegranate, Carrot,
+      // Nephritis, Green Sea, Wisteria) — replaces Tailwind's default
+      // candy-bright blue/red/amber/emerald/teal/violet/indigo scales so
+      // every existing bg-blue-600 / text-red-700 / border-emerald-200 etc.
+      // utility picks it up without touching each component.
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              lightBg: '#FFFFFF',
+              accentBlue: '#2980B9',
+              accentGreen: '#219653',
+              accentRed: '#C0392B',
+              accentAmber: '#D68A0C',
+              blue: { 50: '#f2f7fb', 100: '#e3eef6', 200: '#c3dbeb', 300: '#98c2dd', 400: '#61a1cb', 500: '#2980B9', 600: '#236e9f', 700: '#1e5c85', 800: '#184a6b', 900: '#133b55', 950: '#0d293b' },
+              red: { 50: '#fbf3f2', 100: '#f7e5e3', 200: '#edc8c4', 300: '#e1a099', 400: '#d06c62', 500: '#C0392B', 600: '#a53125', 700: '#8a291f', 800: '#6f2119', 900: '#581a14', 950: '#3d120e' },
+              amber: { 50: '#fdf8f0', 100: '#faf0df', 200: '#f4debb', 300: '#ebc78a', 400: '#e1a84b', 500: '#D68A0C', 600: '#b8770a', 700: '#9a6309', 800: '#7c5007', 900: '#623f06', 950: '#442c04' },
+              emerald: { 50: '#f2f9f5', 100: '#e2f1e9', 200: '#c1e2cf', 300: '#94cdac', 400: '#5bb180', 500: '#219653', 600: '#1c8147', 700: '#186c3c', 800: '#135730', 900: '#0f4526', 950: '#0b301b' },
+              green: { 50: '#f2f9f5', 100: '#e2f1e9', 200: '#c1e2cf', 300: '#94cdac', 400: '#5bb180', 500: '#219653', 600: '#1c8147', 700: '#186c3c', 800: '#135730', 900: '#0f4526', 950: '#0b301b' },
+              teal: { 50: '#f1f9f8', 100: '#e1f3ef', 200: '#bee4dd', 300: '#8fd1c4', 400: '#53b9a5', 500: '#16A085', 600: '#138a72', 700: '#107360', 800: '#0d5d4d', 900: '#0a4a3d', 950: '#07332b' },
+              violet: { 50: '#f8f4fa', 100: '#f0e7f4', 200: '#dfcbe8', 300: '#c9a5d8', 400: '#ab75c2', 500: '#8E44AD', 600: '#7a3a95', 700: '#66317d', 800: '#522764', 900: '#411f50', 950: '#2d1637' },
+              indigo: { 50: '#f8f4fa', 100: '#f0e7f4', 200: '#dfcbe8', 300: '#c9a5d8', 400: '#ab75c2', 500: '#8E44AD', 600: '#7a3a95', 700: '#66317d', 800: '#522764', 900: '#411f50', 950: '#2d1637' }
+            },
+            fontFamily: {
+              sans: ['Open Sans', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace']
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

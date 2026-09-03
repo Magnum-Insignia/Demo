@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI World Model Predictive Cyber Defense Dashboard (Light Mode)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        lightBg: '#F8FAFC',
+                        panelLightBg: '#FFFFFF',
+                        panelLightBorder: '#E2E8F0',
+                        accentBlue: '#2563EB',
+                        accentGreen: '#059669',
+                        accentRed: '#DC2626',
+                        accentAmber: '#D97706'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        .glass-panel { 
+            background: #FFFFFF; 
+            border: 1px solid #E2E8F0; 
+            box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.03); 
+        }
+        .pulse-red { animation: pulse-red-light 2s infinite; }
+        @keyframes pulse-red-light {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-btn.active { 
+            background: #EFF6FF; 
+            color: #1D4ED8; 
+            border-color: #BFDBFE; 
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-lightBg text-slate-800 font-sans min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- TOP APPLICATION HEADER (LIGHT MODE) -->
+    <header class="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center space-x-4">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-blue-500/20">
+                WM
+            </div>
+            <div>
+                <h1 class="font-bold text-base tracking-wide text-slate-900">AI WORLD MODEL PREDICTIVE CYBER DEFENSE</h1>
+                <p class="text-xs text-slate-500 font-mono">P(S<sub>t+1</sub> | S<sub>t</sub>) Temporal Simulation &amp; Proactive Threat Anticipation</p>
+            </div>
+        </div>
+
+        <!-- Global Status Badges & Controls -->
+        <div class="flex items-center space-x-4 font-mono text-xs">
+            <!-- Telemetry Time Window Selector (Last 24 Hours Default) -->
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <span class="text-slate-500 font-bold">Window:</span>
+                <select id="timeRangeSelect" onchange="updateDashboardTelemetry()" class="bg-transparent font-bold text-blue-700 focus:outline-none cursor-pointer">
+                    <option value="24h" selected>Last 24 Hours</option>
+                    <option value="12h">Last 12 Hours</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="1h">Last 1 Hour</option>
+                </select>
+            </div>
+
+            <!-- Horizon K-Step Selector -->
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner">
+                <span class="text-slate-500 font-bold">Horizon (K):</span>
+                <select id="kHorizonSelect" onchange="updateDashboardTelemetry()" class="bg-transparent font-bold text-red-600 focus:outline-none cursor-pointer">
+                    <option value="5">K = 5 Steps (+2.5m)</option>
+                    <option value="10" selected>K = 10 Steps (+5.0m)</option>
+                    <option value="20">K = 20 Steps (+10.0m)</option>
+                    <option value="30">K = 30 Steps (+15.0m)</option>
+                </select>
+            </div>
+
+            <!-- Threat Status Badge -->
+            <div class="flex items-center space-x-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg pulse-red">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                <span class="text-xs font-bold text-red-700 tracking-wide font-mono">CRITICAL THREAT</span>
+            </div>
+
+            <!-- Real-time Clock -->
+            <div class="font-mono text-xs text-slate-500">
+                <span id="liveClock">2026-09-02 21:35:00 UTC</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- LEFT NAVIGATION SIDEBAR -->
+        <aside class="w-64 border-r border-slate-200 bg-white p-4 flex flex-col justify-between space-y-2 select-none shadow-sm">
+            <div class="space-y-1">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Operational Views</div>
+
+                <button onclick="switchTab('tab1')" id="nav-tab1" class="nav-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-slate-700 hover:bg-slate-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span>F1: Command Center</span>
+                </button>
+
+                <button onclick="switchTab('tab2')" id="nav-tab2" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h1.5a2.5 2.5 0 002.5-2.5V11a2 2 0 012-2h1.065M12 21a9 9 0 100-18 9 9 0 000 18z"></path></svg>
+                    <span>F2: Topology &amp; Geo Map</span>
+                </button>
+
+                <button onclick="switchTab('tab3')" id="nav-tab3" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span>F3: MITRE ATT&amp;CK Matrix</span>
+                </button>
+
+                <button onclick="switchTab('tab4')" id="nav-tab4" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    <span>F4: Flow &amp; SHAP Inspector</span>
+                </button>
+
+                <button onclick="switchTab('tab5')" id="nav-tab5" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>F5: Issues &amp; Incident Feed</span>
+                </button>
+
+                <button onclick="switchTab('tab6')" id="nav-tab6" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <span>F6: Ingestion &amp; Benchmark</span>
+                </button>
+
+                <button onclick="switchTab('tab7')" id="nav-tab7" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    <span>F7: AI World Profiler</span>
+                </button>
+
+                <button onclick="switchTab('tab8')" id="nav-tab8" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <span>F8: Security Audit DB</span>
+                </button>
+
+                <button onclick="switchTab('tab9')" id="nav-tab9" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>F9: CLI Settings</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN VIEWPORT CONTENT AREA -->
+        <main class="flex-1 p-6 overflow-y-auto bg-lightBg">
+            
+            <!-- FRAME 1: COMMAND CENTER & REAL-TIME PREDICTIVE OVERVIEW -->
+            <div id="content-tab1" class="tab-content active space-y-6">
+                
+                <!-- ZONE A: BALANCED EXECUTIVE METRICS ROW -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                    
+                    <!-- 1. NETWORK OVERVIEW CARD (5 COLS SPAN) -->
+                    <div class="glass-panel p-4 rounded-xl lg:col-span-5 flex flex-col justify-between space-y-2">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <span class="text-xs font-bold text-slate-700">1. Network Overview &amp; Live Telemetry</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-50 border border-red-200 text-red-600">CURRENT RISK: HIGH</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 font-mono text-xs text-slate-700">
+                            <div class="flex justify-between"><span class="text-slate-500">Active Flows:</span><span id="statActiveFlows" class="text-slate-900 font-bold">12,483</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Packets/sec:</span><span id="statPps" class="text-slate-900 font-bold">8,921 pps</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Bytes/sec:</span><span id="statBps" class="text-slate-900 font-bold">14.2 MB/s</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Source IPs:</span><span id="statSrcIps" class="text-slate-900 font-bold">327</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Dest IPs:</span><span id="statDstIps" class="text-slate-900 font-bold">184</span></div>
+                            <div class="flex justify-between text-amber-600"><span class="font-bold">Suspicious Flows:</span><span id="statSuspicious" class="font-bold">47</span></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI CARDS GRID (7 COLS SPAN) -->
+                    <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        
+                        <!-- 2. INFILTRATION PROBABILITY CARD -->
+                        <div class="glass-panel p-4 rounded-xl flex flex-col justify-between space-y-1">
+                            <span class="text-xs text-slate-500 font-medium">2. Infiltration Probability</span>
+                            <div id="probScoreValue" class="text-3xl font-extrabold text-red-600 font-mono">84.6%</div>
+                            <p id="probHorizonSub" class="text-[11px] text-red-500 font-mono">Next K=10 Windows (+12% in 2m)</p>
+                        </div>
+
+                        <!-- 3. ATTACK TIMELINE CARD -->
+                        <div class="glass-panel p-4 rounded-xl flex flex-col justify-between space-y-1">
+                            <span class="text-xs text-slate-500 font-medium">3. Time-to-Compromise</span>
+                            <div id="ttcValue" class="text-3xl font-extrabold text-amber-600 font-mono">04m 12s</div>
+                            <p id="ttcHorizonSub" class="text-[11px] text-amber-600 font-mono">AI Temporal Horizon (K=10)</p>
+                        </div>
+
+                        <!-- 4. FLAGGED TRAFFIC & INFRASTRUCTURE CARD -->
+                        <div class="glass-panel p-4 rounded-xl flex flex-col justify-between space-y-1">
+                            <span class="text-xs text-slate-500 font-medium">Flagged Traffic &amp; Infrastructure</span>
+                            <div class="text-3xl font-extrabold text-emerald-600 font-mono">142 Flows</div>
+                            <p class="text-[11px] text-slate-500 font-mono">1,248 Hosts | 67 Nodes Probed</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ZONE B: CENTRAL DUAL-CANVAS GRID (STABILITY VS PREDICTIVE STAGE & RISK CURVE) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    
+                    <!-- NETWORK STABILITY CHART (LOAD VS TIME) - 7 COLS SPAN -->
+                    <div class="glass-panel p-5 rounded-xl lg:col-span-7 flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">Network Stability Chart (<span id="chartTitleWindow">Last 24 Hours</span>)</h3>
+                                <p class="text-xs text-slate-500">Historical Telemetry Stream vs. AI World Model Forecast Horizon (<span id="chartTitleK">K=10 Steps</span>)</p>
+                            </div>
+                            <div class="flex items-center space-x-4 text-xs font-mono">
+                                <span class="flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-emerald-600"></span><span class="text-slate-700">Past Load</span></span>
+                                <span class="flex items-center space-x-1.5"><span class="w-3 h-0.5 border-t border-dashed border-red-600"></span><span class="text-slate-700">AI Projection</span></span>
+                            </div>
+                        </div>
+
+                        <!-- SVG STABILITY CHART -->
+                        <div class="h-64 relative bg-slate-50 rounded-lg border border-slate-200 p-2 overflow-hidden group">
+                            <svg class="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="pastGradLightMock" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#10B981" stop-opacity="0.25"/>
+                                        <stop offset="100%" stop-color="#10B981" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                    <linearGradient id="futureGradLightMock" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#EF4444" stop-opacity="0.30"/>
+                                        <stop offset="100%" stop-color="#EF4444" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+
+                                <line x1="0" y1="40" x2="600" y2="40" stroke="#E2E8F0" stroke-dasharray="3,3"/>
+                                <line x1="0" y1="80" x2="600" y2="80" stroke="#E2E8F0" stroke-dasharray="3,3"/>
+                                <line x1="0" y1="120" x2="600" y2="120" stroke="#E2E8F0" stroke-dasharray="3,3"/>
+                                <line x1="0" y1="160" x2="600" y2="160" stroke="#E2E8F0" stroke-dasharray="3,3"/>
+
+                                <line x1="360" y1="0" x2="360" y2="200" stroke="#0284C7" stroke-width="1.5" stroke-dasharray="4,4"/>
+                                <text x="365" y="15" fill="#0284C7" font-size="9" font-family="monospace" font-weight="bold">NOW (t=0)</text>
+
+                                <line x1="0" y1="60" x2="600" y2="60" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="6,4"/>
+                                <text x="10" y="54" fill="#DC2626" font-size="9" font-family="monospace" font-weight="bold">CRITICAL CAPACITY THRESHOLD (8.0 Gbps)</text>
+
+                                <path id="svgPastFill" d="M0,140 Q60,130 120,150 T240,110 T360,120 L360,200 L0,200 Z" fill="url(#pastGradLightMock)"/>
+                                <path id="svgFutureFill" d="M360,120 Q420,80 480,45 T600,20 L600,200 L360,200 Z" fill="url(#futureGradLightMock)"/>
+
+                                <path d="M0,160 Q60,145 120,165 T240,130 T360,140 Q420,110 480,75 T600,45" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-dasharray="3,3"/>
+                                <path id="svgPastLine" d="M0,140 Q60,130 120,150 T240,110 T360,120" fill="none" stroke="#059669" stroke-width="3.5"/>
+                                <path id="svgFutureLine" d="M360,120 Q420,80 480,45 T600,20" fill="none" stroke="#DC2626" stroke-width="3.5" stroke-dasharray="7,5"/>
+
+                                <circle cx="120" cy="150" r="5" fill="#2563EB" stroke="#FFFFFF" stroke-width="2" class="cursor-pointer hover:scale-150 transition-all"/>
+                                <circle cx="240" cy="110" r="5" fill="#D97706" stroke="#FFFFFF" stroke-width="2" class="cursor-pointer hover:scale-150 transition-all"/>
+                                <circle cx="360" cy="120" r="8" fill="#DC2626" opacity="0.3" class="animate-ping"/>
+                                <circle cx="360" cy="120" r="6" fill="#DC2626" stroke="#FFFFFF" stroke-width="2" class="cursor-pointer hover:scale-150 transition-all pulse-red"/>
+                            </svg>
+
+                            <div class="absolute top-10 left-1/2 bg-white/95 border border-slate-300 p-2.5 rounded-lg shadow-xl text-[11px] font-mono pointer-events-none transform -translate-x-1/2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                                    <span class="text-blue-700 font-bold">Snapshot: t = 21:35:00 UTC</span>
+                                </div>
+                                <div class="text-slate-700">Telemetry Load: 4.82 Gbps (8,921 pps)</div>
+                                <div id="tooltipProb" class="text-red-600 font-bold">Predicted Threat Escalation: 84.6% (Critical)</div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between text-[11px] text-slate-500 font-mono px-1">
+                            <span id="lblTime1">t - 24h (00:00)</span>
+                            <span id="lblTime2">t - 18h (06:00)</span>
+                            <span id="lblTime3">t - 12h (12:00)</span>
+                            <span id="lblTime4">t - 6h (18:00)</span>
+                            <span id="lblTimeNow" class="text-blue-700 font-bold">t NOW (21:35)</span>
+                            <span id="lblTimeK" class="text-red-700 font-bold">t + 5.0m (K=10)</span>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: PREDICTED STAGE & RISK TOLERANCE CURVE -->
+                    <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+                        <div class="glass-panel p-4 rounded-xl space-y-2.5 flex-1">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                                <h3 class="font-bold text-xs text-slate-900">Predicted Attack Stage &amp; MITRE Mapping</h3>
+                                <span id="stageBadgeK" class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-red-50 border border-red-200 text-red-600">K=10 ROLLOUT</span>
+                            </div>
+                            
+                            <div class="p-2.5 bg-red-50 border border-red-200 rounded-lg text-center pulse-red">
+                                <span class="text-[9px] text-red-700 font-mono uppercase tracking-wider font-bold">Predicted MITRE ATT&amp;CK Stage</span>
+                                <div class="text-sm font-extrabold text-red-600 font-mono">LATERAL MOVEMENT / C2</div>
+                                <div class="text-[11px] text-red-700 font-mono font-bold">TA0008 · T1210 (Remote Exploitation)</div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-700">
+                                <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                    <div class="text-slate-500 text-[10px]">Stage Convergence:</div>
+                                    <div id="convergenceScore" class="text-red-600 font-bold">84.6% Likelihood</div>
+                                </div>
+                                <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                    <div class="text-slate-500 text-[10px]">Target Host:</div>
+                                    <div class="text-amber-700 font-bold">SRV1 (10.0.4.12:445)</div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <div class="text-[10px] text-slate-500 font-mono flex justify-between">
+                                    <span>Attack Phase Progression</span>
+                                    <span class="text-red-600 font-bold">Phase 4 of 5</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-1">
+                                    <div class="h-2 rounded bg-emerald-500"></div>
+                                    <div class="h-2 rounded bg-emerald-500"></div>
+                                    <div class="h-2 rounded bg-amber-500"></div>
+                                    <div class="h-2 rounded bg-red-600 pulse-red"></div>
+                                    <div class="h-2 rounded bg-slate-200"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-4 rounded-xl space-y-2">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-xs text-slate-900 font-sans">Risk tolerance curve</h3>
+                                <span id="breachBadgeK" class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-red-50 border border-red-200 text-red-600 animate-pulse">Breach at Step K=6</span>
+                            </div>
+                            
+                            <div class="h-28 bg-slate-50 rounded-lg border border-slate-200 p-2 relative overflow-hidden">
+                                <svg class="w-full h-full" viewBox="0 0 300 110">
+                                    <defs>
+                                        <linearGradient id="riskAreaGradLightMock" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stop-color="#10B981" stop-opacity="0.20"/>
+                                            <stop offset="55%" stop-color="#F59E0B" stop-opacity="0.25"/>
+                                            <stop offset="100%" stop-color="#EF4444" stop-opacity="0.35"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M10,75 Q90,70 170,58 Q210,42 240,32 T290,15 L290,110 L10,110 Z" fill="url(#riskAreaGradLightMock)"/>
+                                    <line x1="0" y1="45" x2="300" y2="45" stroke="#DC2626" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                    <line x1="170" y1="0" x2="170" y2="110" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="3,3"/>
+                                    <path d="M10,75 Q90,70 170,58" fill="none" stroke="#334155" stroke-width="2.5"/>
+                                    <path d="M170,58 Q210,42 240,32 T290,15" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-dasharray="4,3"/>
+                                    <circle cx="206" cy="45" r="3.5" fill="#DC2626"/>
+                                </svg>
+                            </div>
+                            <div class="flex justify-between text-[9px] font-mono text-slate-500 px-1">
+                                <span id="lblRiskPast">Past Telemetry (24h)</span>
+                                <span class="text-blue-700 font-bold">Current $t=0$</span>
+                                <span id="lblRiskFuture" class="text-red-600 font-bold">AI Forecast (+5.0m)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZONE C: DYNAMIC TELEMETRY TRENDS & PREDICTIONS SUMMARY TABLE -->
+                <div class="glass-panel p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-900">Observed Telemetry Trends &amp; AI Predictive Summary (<span id="tableHeaderWindow">24 Hours Log</span>)</h3>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs font-mono">
+                            <thead class="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5">Time Horizon</th>
+                                    <th class="p-2.5">Observed Flag / Pattern</th>
+                                    <th class="p-2.5">Infiltration Risk</th>
+                                    <th class="p-2.5">Predicted MITRE ATT&CK Phase</th>
+                                    <th class="p-2.5">Key Driving Attributes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="telemetryTableBody" class="divide-y divide-slate-200 text-slate-700">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- OTHER TAB FRAMES (INCLUDED VIA IFRAMES / INNER MODULES) -->
+            <div id="content-tab2" class="tab-content">
+                <iframe src="frame2_topology_geo.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab3" class="tab-content">
+                <iframe src="frame3_mitre_attack.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab4" class="tab-content">
+                <iframe src="frame4_flow_shap.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab5" class="tab-content">
+                <iframe src="frame5_issues_playbooks.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab6" class="tab-content">
+                <iframe src="frame6_ingestion_benchmark.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab7" class="tab-content">
+                <iframe src="frame7_ai_inspector.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab8" class="tab-content">
+                <iframe src="frame8_audit_db.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+            <div id="content-tab9" class="tab-content">
+                <iframe src="frame9_cli_settings.html" class="w-full h-[800px] rounded-xl border border-slate-200"></iframe>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- VANILLA JAVASCRIPT FOR MULTI-TAB NAVIGATION & TELEMETRY UPDATES -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`content-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+        }
+
+        const telemetryDatasets = {
+            '24h': {
+                label: 'Last 24 Hours',
+                timeLabels: ['t - 24h (00:00)', 't - 18h (06:00)', 't - 12h (12:00)', 't - 6h (18:00)'],
+                riskPastText: 'Past Telemetry (24h)',
+                activeFlows: '12,483',
+                pps: '8,921 pps',
+                bps: '14.2 MB/s',
+                srcIps: '327',
+                dstIps: '184',
+                suspicious: '47',
+                pastPathD: 'M0,140 Q60,130 120,150 T240,110 T360,120',
+                pastFillD: 'M0,140 Q60,130 120,150 T240,110 T360,120 L360,200 L0,200 Z',
+                tableRows: [
+                    { time: 't - 24h (00:00)', flag: 'Baseline Enterprise Traffic Stream', risk: '12.4% (Normal)', riskCls: 'text-emerald-600 font-bold', mitre: 'Normal Operations', attrs: 'Standard HTTPS/SSH Encrypted Sessions' },
+                    { time: 't - 18h (06:00)', flag: 'Routine Subnet Vulnerability Scan', risk: '15.2% (Normal)', riskCls: 'text-emerald-600 font-bold', mitre: 'Discovery (TA0007)', attrs: 'Internal Nessus Scanner Probe (Port 80/443)' },
+                    { time: 't - 12h (12:00)', flag: 'Outbound Entropy Anomaly Spike', risk: '28.6% (Low)', riskCls: 'text-emerald-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Payload Entropy High, IAT Variance 0.42' },
+                    { time: 't - 6h (18:00)', flag: 'TCP SYN Flood Probe (Port 445/135)', risk: '42.1% (Moderate)', riskCls: 'text-amber-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Sequential Port Access, High Packet Rate' },
+                    { time: 't NOW (21:35)', flag: 'SMB MS17-010 Exploit Payload Signature', risk: '64.5% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'TTL Variance (0.84), TCP Window Size 8192' }
+                ]
+            },
+            '12h': {
+                label: 'Last 12 Hours',
+                timeLabels: ['t - 12h (09:35)', 't - 9h (12:35)', 't - 6h (15:35)', 't - 3h (18:35)'],
+                riskPastText: 'Past Telemetry (12h)',
+                activeFlows: '9,140',
+                pps: '6,420 pps',
+                bps: '10.8 MB/s',
+                srcIps: '210',
+                dstIps: '142',
+                suspicious: '38',
+                pastPathD: 'M0,150 Q60,140 120,130 T240,120 T360,125',
+                pastFillD: 'M0,150 Q60,140 120,130 T240,120 T360,125 L360,200 L0,200 Z',
+                tableRows: [
+                    { time: 't - 12h (09:35)', flag: 'Outbound Entropy Anomaly Spike', risk: '28.6% (Low)', riskCls: 'text-emerald-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Payload Entropy High, IAT Variance 0.42' },
+                    { time: 't - 9h (12:35)', flag: 'Unusual TCP Window Size Handshake', risk: '34.1% (Low)', riskCls: 'text-emerald-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Window Size 8192, TTL Jitter 0.31' },
+                    { time: 't - 6h (15:35)', flag: 'TCP SYN Flood Probe (Port 445/135)', risk: '42.1% (Moderate)', riskCls: 'text-amber-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Sequential Port Access, High Packet Rate' },
+                    { time: 't - 3h (18:35)', flag: 'DCE/RPC Endpoint Mapper Probe', risk: '51.8% (Moderate)', riskCls: 'text-amber-600 font-bold', mitre: 'Discovery (TA0007)', attrs: 'UUID Binding Request, Asymmetry 0.28' },
+                    { time: 't NOW (21:35)', flag: 'SMB MS17-010 Exploit Payload Signature', risk: '64.5% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'TTL Variance (0.84), TCP Window Size 8192' }
+                ]
+            },
+            '6h': {
+                label: 'Last 6 Hours',
+                timeLabels: ['t - 6h (15:35)', 't - 4.5h (17:05)', 't - 3h (18:35)', 't - 1.5h (20:05)'],
+                riskPastText: 'Past Telemetry (6h)',
+                activeFlows: '7,820',
+                pps: '5,110 pps',
+                bps: '8.4 MB/s',
+                srcIps: '185',
+                dstIps: '115',
+                suspicious: '29',
+                pastPathD: 'M0,135 Q60,145 120,125 T240,115 T360,120',
+                pastFillD: 'M0,135 Q60,145 120,125 T240,115 T360,120 L360,200 L0,200 Z',
+                tableRows: [
+                    { time: 't - 6h (15:35)', flag: 'TCP SYN Flood Probe (Port 445/135)', risk: '42.1% (Moderate)', riskCls: 'text-amber-600 font-bold', mitre: 'Reconnaissance (TA0043)', attrs: 'Sequential Port Access, High Packet Rate' },
+                    { time: 't - 4.5h (17:05)', flag: 'DCE/RPC Endpoint Mapper Probe', risk: '51.8% (Moderate)', riskCls: 'text-amber-600 font-bold', mitre: 'Discovery (TA0007)', attrs: 'UUID Binding Request, Asymmetry 0.28' },
+                    { time: 't - 3h (18:35)', flag: 'High SYN/ACK Asymmetry Ratio', risk: '58.4% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'Asymmetry Ratio +0.38, TTL Var 0.72' },
+                    { time: 't - 1.5h (20:05)', flag: 'EternalBlue SMB Buffer Overflow Probe', risk: '61.2% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'Malformed SMB Header, IAT Var 0.29' },
+                    { time: 't NOW (21:35)', flag: 'SMB MS17-010 Exploit Payload Signature', risk: '64.5% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'TTL Variance (0.84), TCP Window Size 8192' }
+                ]
+            },
+            '1h': {
+                label: 'Last 1 Hour',
+                timeLabels: ['t - 60m (20:35)', 't - 45m (20:50)', 't - 30m (21:05)', 't - 15m (21:20)'],
+                riskPastText: 'Past Telemetry (1h)',
+                activeFlows: '5,430',
+                pps: '4,100 pps',
+                bps: '6.2 MB/s',
+                srcIps: '124',
+                dstIps: '88',
+                suspicious: '21',
+                pastPathD: 'M0,120 Q60,110 120,115 T240,118 T360,120',
+                pastFillD: 'M0,120 Q60,110 120,115 T240,118 T360,120 L360,200 L0,200 Z',
+                tableRows: [
+                    { time: 't - 60m (20:35)', flag: 'EternalBlue SMB Buffer Overflow Probe', risk: '61.2% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'Malformed SMB Header, IAT Var 0.29' },
+                    { time: 't - 45m (20:50)', flag: 'DoublePulsar Backdoor Ping Probe', risk: '62.8% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'Opcode 0x23 Trans2 Session Payload' },
+                    { time: 't - 30m (21:05)', flag: 'WMI Query Execution & Recon Probe', risk: '63.4% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Execution (TA0002)', attrs: 'Process Creation WmiPrvSE.exe' },
+                    { time: 't - 15m (21:20)', flag: 'Remote Registry Probe (Port 445)', risk: '64.0% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Discovery (TA0007)', attrs: 'RegConnectRegistry Payload' },
+                    { time: 't NOW (21:35)', flag: 'SMB MS17-010 Exploit Payload Signature', risk: '64.5% (Elevated)', riskCls: 'text-amber-600 font-bold', mitre: 'Initial Access (TA0011)', attrs: 'TTL Variance (0.84), TCP Window Size 8192' }
+                ]
+            }
+        };
+
+        const kHorizonConfigs = {
+            '5': { stepLabel: '+2.5m (K=5)', probScore: '72.1%', ttcText: '02m 30s', breachText: 'Breach at Step K=4', futureD: 'M360,120 Q420,95 480,70 T600,50' },
+            '10': { stepLabel: '+5.0m (K=10)', probScore: '84.6%', ttcText: '04m 12s', breachText: 'Breach at Step K=6', futureD: 'M360,120 Q420,80 480,45 T600,20' },
+            '20': { stepLabel: '+10.0m (K=20)', probScore: '91.8%', ttcText: '07m 45s', breachText: 'Breach at Step K=8', futureD: 'M360,120 Q420,70 480,30 T600,10' },
+            '30': { stepLabel: '+15.0m (K=30)', probScore: '96.4%', ttcText: '12m 00s', breachText: 'Breach at Step K=12', futureD: 'M360,120 Q420,60 480,20 T600,5' }
+        };
+
+        function updateDashboardTelemetry() {
+            const rangeKey = document.getElementById('timeRangeSelect').value;
+            const kKey = document.getElementById('kHorizonSelect').value;
+
+            const ds = telemetryDatasets[rangeKey];
+            const kCfg = kHorizonConfigs[kKey];
+
+            document.getElementById('chartTitleWindow').textContent = ds.label;
+            document.getElementById('chartTitleK').textContent = `K=${kKey} Steps (${kCfg.stepLabel})`;
+            document.getElementById('tableHeaderWindow').textContent = `${ds.label} Telemetry Stream`;
+
+            document.getElementById('statActiveFlows').textContent = ds.activeFlows;
+            document.getElementById('statPps').textContent = ds.pps;
+            document.getElementById('statBps').textContent = ds.bps;
+            document.getElementById('statSrcIps').textContent = ds.srcIps;
+            document.getElementById('statDstIps').textContent = ds.dstIps;
+            document.getElementById('statSuspicious').textContent = ds.suspicious;
+
+            document.getElementById('probScoreValue').textContent = kCfg.probScore;
+            document.getElementById('probHorizonSub').textContent = `Next K=${kKey} Windows (+12% in 2m)`;
+            document.getElementById('ttcValue').textContent = kCfg.ttcText;
+            document.getElementById('ttcHorizonSub').textContent = `AI Temporal Horizon (${kCfg.stepLabel})`;
+
+            document.getElementById('convergenceScore').textContent = `${kCfg.probScore} Likelihood`;
+            document.getElementById('stageBadgeK').textContent = `K=${kKey} ROLLOUT`;
+            document.getElementById('breachBadgeK').textContent = kCfg.breachText;
+            document.getElementById('tooltipProb').textContent = `Predicted Threat Escalation: ${kCfg.probScore} (Critical)`;
+
+            document.getElementById('svgPastLine').setAttribute('d', ds.pastPathD);
+            document.getElementById('svgPastFill').setAttribute('d', ds.pastFillD);
+            document.getElementById('svgFutureLine').setAttribute('d', kCfg.futureD);
+
+            document.getElementById('lblTime1').textContent = ds.timeLabels[0];
+            document.getElementById('lblTime2').textContent = ds.timeLabels[1];
+            document.getElementById('lblTime3').textContent = ds.timeLabels[2];
+            document.getElementById('lblTime4').textContent = ds.timeLabels[3];
+            document.getElementById('lblTimeK').textContent = `t ${kCfg.stepLabel}`;
+
+            document.getElementById('lblRiskPast').textContent = ds.riskPastText;
+            document.getElementById('lblRiskFuture').textContent = `AI Forecast (${kCfg.stepLabel})`;
+
+            const tbody = document.getElementById('telemetryTableBody');
+            tbody.innerHTML = '';
+
+            ds.tableRows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-900">${row.time}</td>
+                    <td class="p-2.5">${row.flag}</td>
+                    <td class="p-2.5 ${row.riskCls}">${row.risk}</td>
+                    <td class="p-2.5">${row.mitre}</td>
+                    <td class="p-2.5">${row.attrs}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const forecastTr = document.createElement('tr');
+            forecastTr.className = 'bg-red-50/70 hover:bg-red-50';
+            forecastTr.innerHTML = `
+                <td class="p-2.5 font-bold text-red-700">t ${kCfg.stepLabel} (Forecast)</td>
+                <td class="p-2.5 font-bold text-red-800">WMI Lateral Movement &amp; C2 Beacon</td>
+                <td class="p-2.5 text-red-600 font-extrabold">${kCfg.probScore} (CRITICAL)</td>
+                <td class="p-2.5 text-red-700 font-bold">Lateral Movement / C2 (TA0008)</td>
+                <td class="p-2.5">Bidirectional Ratio, Retransmissions</td>
+            `;
+            tbody.appendChild(forecastTr);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDashboardTelemetry();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #262220;
+  font-family: 'Open Sans', system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f0ec; }
+::-webkit-scrollbar-thumb { background: #c7bfae; border-radius: 3px; }
+
+.glass-panel {
+  background: #ffffff;
+  border: 1px solid #e3ddcf;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(38, 34, 32, 0.04);
+}
+
+.pulse-red { animation: pulse-red-light 2s infinite; }
+@keyframes pulse-red-light {
+  0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.app-body { display: flex; flex: 1; overflow: hidden; }
+.app-main { flex: 1; padding: 1.5rem; overflow-y: auto; background: #ffffff; }
+
+/* ============================================================
+ * Dark mode
+ * Rather than adding a `dark:` variant to every className across
+ * every frame, these rules re-target the SAME small vocabulary of
+ * neutral Tailwind utilities (bg-white / bg-slate-50..200 /
+ * text-slate-300..900 / border-slate-100..300 / divide-slate-*)
+ * that's already used consistently for chrome throughout the app.
+ * Saturated brand/status colors (blue/red/amber/emerald/teal/violet)
+ * are left alone — they're tuned to work on both surfaces.
+ * Deliberately excluded: bg-slate-950 / border-slate-800 /
+ * text-slate-100 (the CLI terminal — meant to look like a terminal
+ * and stay dark regardless of app theme).
+ * ============================================================ */
+html.dark {
+  color-scheme: dark;
+}
+.dark body,
+.dark .app-main {
+  background: #0f1620;
+  color: #eaf0f7;
+}
+.dark .glass-panel {
+  background: #161e2b;
+  border-color: #2a3648;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.dark ::-webkit-scrollbar-track { background: #161e2b; }
+.dark ::-webkit-scrollbar-thumb { background: #37455a; }
+
+.dark .bg-white { background-color: #161e2b !important; }
+.dark .bg-slate-50 { background-color: #1c2635 !important; }
+.dark .bg-slate-100 { background-color: #232e40 !important; }
+.dark .bg-slate-200 { background-color: #2a3648 !important; }
+
+.dark .border-slate-100 { border-color: #1f2937 !important; }
+.dark .border-slate-200 { border-color: #2a3648 !important; }
+.dark .border-slate-300 { border-color: #37455a !important; }
+.dark .divide-slate-100 > * + * { border-color: #1f2937 !important; }
+.dark .divide-slate-200 > * + * { border-color: #2a3648 !important; }
+
+.dark .text-slate-900 { color: #eaf0f7 !important; }
+.dark .text-slate-800 { color: #d3dce6 !important; }
+.dark .text-slate-700 { color: #b7c3d1 !important; }
+.dark .text-slate-600 { color: #97a6b8 !important; }
+.dark .text-slate-500 { color: #7a8b9f !important; }
+.dark .text-slate-400 { color: #5e7086 !important; }
+.dark .text-slate-300 { color: #47576b !important; }
+
+.dark input:not([type='range']),
+.dark select,
+.dark textarea {
+  background-color: #161e2b;
+  color: #eaf0f7;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #5e7086;
+}
+
+.dark .shadow-inner { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3); }
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+
+/* Tinted badge/pill backgrounds (bg-*-50/100 + border-*-200) — these read as
+ * quiet/recessive on a white surface but turn into bright, out-of-place
+ * patches on a dark one if left alone, so they get their own dark step
+ * (same hue, folded into the dark surface instead of white). */
+.dark .bg-blue-50 { background-color: #182636 !important; }
+.dark .bg-red-50 { background-color: #2a1a1e !important; }
+.dark .bg-red-100 { background-color: #382024 !important; }
+.dark .bg-amber-50 { background-color: #2a2318 !important; }
+.dark .bg-emerald-50, .dark .bg-green-50 { background-color: #142a26 !important; }
+.dark .bg-teal-50 { background-color: #122a2c !important; }
+.dark .bg-violet-50 { background-color: #201f34 !important; }
+
+.dark .border-blue-200 { border-color: #2d4356 !important; }
+.dark .border-red-200 { border-color: #4a2830 !important; }
+.dark .border-amber-200 { border-color: #4a3d20 !important; }
+.dark .border-emerald-200, .dark .border-green-200 { border-color: #204438 !important; }
+.dark .border-teal-200 { border-color: #1f4548 !important; }
+.dark .border-violet-200 { border-color: #362f52 !important; }
+
+/* Same class of bug as the badge backgrounds above, one level deeper: the
+ * *-600/700/800 text shades are tuned dark-on-purpose for reading on a WHITE
+ * surface (e.g. sat on a light bg-*-50 chip, or directly on a light card) —
+ * on the dark surface those chips/cards now render as, that same dark text
+ * drops to near-unreadable contrast (this is what made TelemetryTable's
+ * "predicted" rows go muddy/illegible in dark mode). Step every one down to
+ * its palette's light (300) tint, which reads clearly against both the dark
+ * card background and the dark-mapped tinted chip backgrounds above. */
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-red-800 { color: #e1a099 !important; }
+.dark .text-amber-600,
+.dark .text-amber-700 { color: #ebc78a !important; }
+.dark .text-emerald-600,
+.dark .text-emerald-700,
+.dark .text-green-600,
+.dark .text-green-700 { color: #94cdac !important; }
+.dark .text-teal-700 { color: #8fd1c4 !important; }
+.dark .text-blue-600,
+.dark .text-blue-700 { color: #98c2dd !important; }
+.dark .text-violet-700 { color: #c9a5d8 !important; }
+
+/* Hover-variant classes (e.g. `hover:bg-slate-50`) compile to a distinct
+ * selector from their plain form (`bg-slate-50`), so the overrides above
+ * never reach them — without this, hovering a row/button/nav-item in dark
+ * mode briefly flashes the raw light-mode tint. Mirrors the same hex chosen
+ * for each class's non-hover mapping above. */
+.dark .hover\:bg-slate-50:hover { background-color: #1c2635 !important; }
+.dark .hover\:bg-slate-100:hover { background-color: #232e40 !important; }
+.dark .hover\:bg-red-100:hover { background-color: #382024 !important; }
+.dark .hover\:bg-blue-50:hover { background-color: #182636 !important; }
