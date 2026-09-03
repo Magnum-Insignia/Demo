@@ -21,19 +21,26 @@ stage prediction, telemetry, and natural-language explainability).
 │               ├── frames/      Feature views (dashboard, topology, logs, ...)
 │               ├── hooks/       React hooks
 │               └── theme/       Theme context (light/dark)
-├── docs/
-│   ├── problem-statement.pdf   Problem statement (SIH)
-│   └── design-assets/          UI mockups and design references
 ├── Dockerfile               Containerized renderer dev server
 ├── docker-compose.yml       Compose config for the containerized dev server
 └── .dockerignore / .gitignore
+```
+
+## Getting started
+
+**Prerequisites:** Node.js 20+, npm, Git — plus Docker Desktop if you want the
+containerized renderer dev flow.
+
+```bash
+git clone https://github.com/Magnum-Insignia/OcuNet_SysApp.git
+cd OcuNet_SysApp/desktop-app
+npm install
 ```
 
 ## Running locally (native)
 
 ```bash
 cd desktop-app
-npm install
 npm run dev        # electron-vite dev — launches Electron with the Vite dev server
 ```
 
