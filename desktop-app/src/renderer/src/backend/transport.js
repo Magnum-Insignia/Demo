@@ -102,6 +102,15 @@ export async function trafficStatus() {
   const res = await fetch(host + '/traffic/status').then((r) => r.json())
   return res.result
 }
+
+// The continuous monitor's rolling time series — the source of truth for the
+// live graphs. Populated server-side, so it is the same for every client and
+// every frame.
+export async function monitorHistory() {
+  if (!connected) throw new Error('offline — the live monitor runs on the backend host')
+  const res = await fetch(host + '/monitor/history').then((r) => r.json())
+  return res.result
+}
 export async function generateTraffic({ profile = 'known', replicas = 10 } = {}) {
   if (!connected) throw new Error('offline — traffic control needs the backend host')
   const res = await post('/traffic/generate', { profile, replicas })

@@ -27,7 +27,7 @@
  */
 import {
   resource, observe, connect, onRevision, backendStatus,
-  runLiveCapture, liveCaptureCapability, trafficStatus
+  runLiveCapture, liveCaptureCapability, trafficStatus, monitorHistory
 } from './transport'
 import { OPERATIONS } from './operations'
 
@@ -47,6 +47,10 @@ backend.liveCapture = {
 // so the capture panel can show whether the network is quiet or busy — it
 // never controls the attack.
 backend.cluster = { status: trafficStatus }
+
+// The continuous monitor's live time series — the source of truth for the live
+// graphs. Server-side, so every frame reads the same recording.
+backend.monitor = { history: monitorHistory }
 
 export { observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability }
 export default backend

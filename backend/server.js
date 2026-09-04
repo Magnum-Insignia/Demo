@@ -28,6 +28,7 @@ import { OPERATIONS, MUTATIONS, invoke } from '../desktop-app/src/renderer/src/b
 import { ENGINE } from '../desktop-app/src/renderer/src/backend/services/model.js'
 import { capture as liveCapture, probe as liveProbe } from './live_capture.js'
 import { generate as genTraffic, stop as stopTraffic, status as trafficStatus, probe as trafficProbe } from './traffic.js'
+import { start as startMonitor, getHistory as monitorHistory } from './monitor.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT || 8787)
@@ -160,6 +161,12 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/traffic/status' && req.method === 'GET') {
     return json(res, 200, { result: await trafficStatus().catch((e) => ({ available: false, reason: String(e) })) })
   }
+
+  // The continuous monitor's rolling time series — the source of truth for the
+  // live graphs. Populated server-side whether or not any client is looking.
+  if (pathname === '/monitor/history' && req.method === 'GET') {
+    return json(res, 200, { result: monitorHistory() })
+  }
   if (pathname === '/traffic/generate' && req.method === 'POST') {
     try {
       const { profile, replicas } = await readBody(req)
@@ -237,4 +244,8 @@ server.listen(PORT, HOST, () => {
   log(`${ENGINE.name} ${ENGINE.version} resident - listening on http://${HOST}:${PORT}`)
   log(`resources: ${Object.keys(OPERATIONS).join(', ')}`)
   log(fs.existsSync(WEB_ROOT) ? 'web fallback build: present' : 'web fallback build: not built (npm run build:web)')
+  // Start the continuous monitor. It captures, scores and appends to the
+  // rolling series on its own, broadcasting each point to connected clients.
+  startMonitor(broadcast)
+  log('live monitor: started')
 })
