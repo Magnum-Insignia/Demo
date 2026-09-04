@@ -308,3 +308,105 @@ export function generate(windowKey, kSteps, seedTag) {
     topFeatures
   }
 }
+
+/*
+ * Live variant of generate(): the SAME data shape, but built from the backend
+ * monitor's real capture series instead of an authored curve. This is what
+ * makes the dashboard graphs sit on a flat baseline and then react the moment
+ * attack traffic appears — every history point is one real capture window, and
+ * the timestamps are the actual capture times (today), so nothing reads into
+ * a wrong future date.
+ *
+ * The short forward forecast is a decay projection from the live current risk,
+ * K windows of a few seconds each — so the horizon is seconds ahead, on the
+ * same clock, not days out.
+ */
+function fmtClock(ms) {
+  const d = new Date(ms)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
+  const rnd = mulberry32(hashStr('live|' + (points.length ? points[points.length - 1].tMs : 0)))
+  const n = points.length
+  const historyRisk = points.map((p) => p.risk)
+  const historyLabels = points.map((p) => fmtClock(p.tMs))
+  const historyLoad = points.map((p) => clamp(1.6 + (p.risk / 100) * 7.2, 0.4, 9.6))
+  const riskNow = n ? historyRisk[n - 1] : 0
+  const last = n ? points[n - 1] : null
+  const nowMs = last ? last.tMs : Date.now()
+
+  // forward projection from the live current risk
+  const ceiling = 98
+  const decay = 0.9
+  const forecastLabels = []
+  const forecastRisk = []
+  const forecastUpper = []
+  const forecastLower = []
+  const forecastLoad = []
+  let breachStep = null
+  for (let s = 1; s <= kSteps; s++) {
+    const base = ceiling - (ceiling - riskNow) * Math.pow(decay, s)
+    const val = clamp(base, riskNow, 99.5)
+    const band = clamp(2.5 + s * 1.3, 0, 40)
+    forecastRisk.push(val)
+    forecastUpper.push(clamp(val + band, 0, 100))
+    forecastLower.push(clamp(val - band, 0, 100))
+    forecastLoad.push(clamp(1.6 + (val / 100) * 7.6, 0, 10.5))
+    forecastLabels.push(fmtClock(nowMs + s * windowSeconds * 1000))
+    if (breachStep === null && val >= BREACH_THRESHOLD) breachStep = s
+  }
+
+  const metric = (baseVal, w) => ({
+    hist: points.map((p) => Math.max(0, baseVal + w * p.risk)),
+    fut: forecastRisk.map((r) => Math.max(0, baseVal + w * r))
+  })
+  const flows = metric(3000, 90)
+  const packets = { hist: points.map((p) => p.packets), fut: forecastRisk.map((r) => Math.round(1800 + 70 * r)) }
+  const bytes = metric(2, 0.09)
+
+  const stageCounts = {}
+  STAGES.forEach((s) => (stageCounts[s.key] = 0))
+  historyRisk.forEach((r) => stageCounts[stageForRisk(r).key]++)
+
+  const flagged = last ? last.flagged : 0
+  const endpoints = last ? last.endpoints : 0
+  const kpis = {
+    activeFlows: last ? last.packets : 0,
+    pps: last ? last.synRate : 0,
+    bps: (last ? (last.packets / windowSeconds / 1000) : 0).toFixed(1),
+    srcIps: endpoints,
+    dstIps: flagged ? 5 : 0,
+    suspicious: flagged
+  }
+
+  const stageNow = stageForRisk(riskNow)
+  const ttcText = breachStep ? `${breachStep * windowSeconds}s` : '> horizon'
+
+  const observedRows = []
+  for (let i = Math.max(0, n - 5); i < n; i++) {
+    const st = stageForRisk(historyRisk[i])
+    observedRows.push({ type: 'observed', time: historyLabels[i], flag: pick(rnd, FLAG_POOL[st.key]),
+      riskPct: historyRisk[i], mitre: st.mitre, attrs: ATTR_POOL[st.key] })
+  }
+  const forecastRows = []
+  for (let s = 0; s < Math.min(5, kSteps); s++) {
+    const st = stageForRisk(forecastRisk[s])
+    forecastRows.push({ type: 'forecast', time: `Step ${s + 1} (${forecastLabels[s]})`,
+      flag: pick(rnd, FLAG_POOL[st.key]) + ' (Projected)', riskPct: forecastRisk[s], mitre: st.mitre, attrs: ATTR_POOL[st.key] })
+  }
+
+  return {
+    windowKey: 'live', windowLabel: 'Live · pod bridge', unit: 'live', live: true, kSteps,
+    historyLabels, historyRisk, historyLoad,
+    forecastLabels, forecastRisk, forecastUpper, forecastLower, forecastLoad,
+    breachStep, ttcText,
+    flows, packets, bytes, stageCounts,
+    riskNow, stageNow, stageIdx: STAGES.indexOf(stageNow),
+    kpis,
+    tableRows: observedRows.concat(forecastRows),
+    flowPoints: generateFlowPoints(rnd, riskNow),
+    topFeatures: generateTopFeatures(rnd, stageNow)
+  }
+}
