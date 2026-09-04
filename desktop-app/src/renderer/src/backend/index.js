@@ -27,8 +27,7 @@
  */
 import {
   resource, observe, connect, onRevision, backendStatus,
-  runLiveCapture, liveCaptureCapability,
-  trafficCapability, trafficStatus, generateTraffic, stopTraffic
+  runLiveCapture, liveCaptureCapability, trafficStatus
 } from './transport'
 import { OPERATIONS } from './operations'
 
@@ -42,13 +41,12 @@ backend.liveCapture = {
   capability: liveCaptureCapability
 }
 
-// Traffic generation: launch/stop the distributed attack on the cluster.
-backend.traffic = {
-  capability: trafficCapability,
-  status: trafficStatus,
-  generate: generateTraffic,
-  stop: stopTraffic
-}
+// The monitor is passive: it does NOT launch traffic. Attacks are generated
+// out of band by the operator (k8s-demo/attack.sh) directly against the
+// cluster. The only cluster read exposed here is a read-only pod-count status,
+// so the capture panel can show whether the network is quiet or busy — it
+// never controls the attack.
+backend.cluster = { status: trafficStatus }
 
 export { observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability }
 export default backend

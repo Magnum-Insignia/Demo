@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import backend from '../../backend'
 
 /*
@@ -9,6 +9,11 @@ import backend from '../../backend'
  * verdicts the detector reached — right here, not on a separate dashboard.
  * Every row is a packet that crossed the wire; nothing is generated.
  *
+ * The monitor is passive: it does not launch traffic. Attacks are generated
+ * out of band by the operator (k8s-demo/attack.sh) directly against the
+ * cluster. The status line below is a read-only observation of pod counts, so
+ * you can see whether the network is quiet or busy — it does not control it.
+ *
  * If the host can't reach a capture source (offline, or the cluster is down)
  * the panel says so instead of showing invented traffic.
  */
@@ -18,6 +23,19 @@ export default function LiveCapturePanel() {
   const [seconds, setSeconds] = useState(8)
   const [run, setRun] = useState(null)
   const [error, setError] = useState(null)
+  const [cluster, setCluster] = useState(null)
+
+  useEffect(() => {
+    if (!cap.available) return
+    let alive = true
+    const poll = () => backend.cluster.status().then((s) => alive && setCluster(s)).catch(() => {})
+    poll()
+    const t = setInterval(poll, 4000)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [cap.available])
 
   async function capture() {
     setBusy(true)
@@ -39,7 +57,21 @@ export default function LiveCapturePanel() {
     <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
       <div className="flex justify-between items-start gap-4">
         <div>
-          <h3 className="font-bold text-sm text-slate-900">Live Capture</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-sm text-slate-900">Live Capture</h3>
+            {cluster?.available && (
+              <span
+                className={
+                  'flex items-center gap-1 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border uppercase ' +
+                  (cluster.attacking ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700')
+                }
+                title="Observed pod counts — the monitor does not control this"
+              >
+                <span className={'w-1.5 h-1.5 rounded-full ' + (cluster.attacking ? 'bg-red-500 animate-pulse' : 'bg-emerald-500')} />
+                {cluster.attacking ? `${cluster.pods.malicious} attacker nodes observed` : 'network quiet'}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-0.5 font-mono">
             {cap.available ? cap.source : 'no capture source on this host'}
           </p>
