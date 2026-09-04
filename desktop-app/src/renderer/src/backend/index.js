@@ -25,10 +25,18 @@
  *   backend.evidence    forensic evidence bundles
  *   backend.session     service health for the operator console
  */
-import { resource, observe, connect, onRevision, backendStatus } from './transport'
+import { resource, observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability } from './transport'
 import { OPERATIONS } from './operations'
 
 export const backend = Object.fromEntries(Object.keys(OPERATIONS).map((name) => [name, resource(name)]))
 
-export { observe, connect, onRevision, backendStatus }
+// Live capture is not a cached read like the rest — it waits on the wire — so
+// it hangs off the backend object as its own async pair rather than as a
+// generated resource operation.
+backend.liveCapture = {
+  run: runLiveCapture,
+  capability: liveCaptureCapability
+}
+
+export { observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability }
 export default backend

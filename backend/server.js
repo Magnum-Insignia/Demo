@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url'
 
 import { OPERATIONS, MUTATIONS, invoke } from '../desktop-app/src/renderer/src/backend/operations.js'
 import { ENGINE } from '../desktop-app/src/renderer/src/backend/services/model.js'
+import { capture as liveCapture, probe as liveProbe } from './live_capture.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT || 8787)
@@ -125,13 +126,28 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname === '/health') {
+    const live = await liveProbe().catch(() => ({ available: false }))
     return json(res, 200, {
       ok: true,
       engine: { name: ENGINE.name, version: ENGINE.version, status: ENGINE.status, residency: ENGINE.residency },
       uptimeSeconds: Math.round((Date.now() - started) / 1000),
       requests: requestCount,
-      resources: Object.keys(OPERATIONS)
+      resources: Object.keys(OPERATIONS),
+      liveCapture: live
     })
+  }
+
+  // Real live packet capture off the running cluster. Host-only: it shells out
+  // to Docker/tcpdump, so the on-device fallback cannot serve it — the client
+  // learns that from /health's liveCapture.available and says so.
+  if (pathname === '/live-capture' && req.method === 'POST') {
+    try {
+      const { seconds, limit } = await readBody(req)
+      const result = await liveCapture({ seconds, limit })
+      return json(res, 200, { result })
+    } catch (err) {
+      return json(res, 400, { error: String(err.message || err) })
+    }
   }
 
   if (pathname === '/stream') {

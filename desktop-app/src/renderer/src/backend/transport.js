@@ -34,6 +34,7 @@ const revisionListeners = new Set()
 let host = DEFAULT_HOST
 let connected = false
 let lastError = null
+let liveCaptureCap = { available: false }
 let inFlight = new Set()
 let seq = 0
 let stream = null
@@ -71,6 +72,25 @@ export function backendStatus() {
   return { host, connected, lastError }
 }
 
+// Whether this host can run a real live capture (Docker + cluster reachable).
+// Read from /health at connect; false in offline mode, which is honest — the
+// on-device fallback has no wire to listen on.
+export function liveCaptureCapability() {
+  return liveCaptureCap
+}
+
+/*
+ * Run a real live packet capture on the host and return the parsed packets and
+ * per-endpoint verdicts. Async on purpose: unlike every cached read, this waits
+ * for tcpdump to actually listen on the wire. Throws if the host is offline or
+ * has no capture source, so the caller can say why instead of faking it.
+ */
+export async function runLiveCapture({ seconds = 8, limit = 4000 } = {}) {
+  if (!connected) throw new Error('offline — live capture needs the backend host (it listens on the wire)')
+  const res = await post('/live-capture', { seconds, limit })
+  return res.result
+}
+
 function keyFor(resourceName, operation, payload) {
   return `${resourceName}.${operation}:${payload === undefined ? '' : JSON.stringify(payload)}`
 }
@@ -104,6 +124,7 @@ export async function connect({ url, timeoutMs = 1500 } = {}) {
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     const health = await fetch(host + '/health', { signal: controller.signal }).then((r) => r.json())
     clearTimeout(timer)
+    liveCaptureCap = health.liveCapture || { available: false }
 
     const snapshot = await post('/snapshot', { operations: SNAPSHOT_OPERATIONS })
     Object.entries(snapshot.results).forEach(([opKey, value]) => cache.set(`${opKey}:`, value))

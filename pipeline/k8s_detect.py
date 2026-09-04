@@ -73,28 +73,28 @@ def per_source(pcap_path: str) -> dict:
 
 
 def score(agg: dict) -> list:
-    """Signal-based score per source IP. Higher = more scanner/brute-like."""
+    """Signal-based score per source IP, rate-based so the same thresholds hold
+    whether the capture ran 8s or 60s. Matches backend/live_capture.js exactly."""
+    times = [t for a in agg.values() for t in (a["first"], a["last"]) if t is not None]
+    gspan = max((max(times) - min(times)), 0.5) if len(times) >= 2 else 1.0
     rows = []
     for ip, a in agg.items():
-        span = max((a["last"] or 0) - (a["first"] or 0), 1e-3)
+        span = gspan
         n_ports = len(a["dst_ports"])
         n_dst = len(a["dst_ips"])
         port_entropy = _entropy(a["dst_ports"])
         conn_rate = a["packets"] / span
         max_target = max(a["targets"].values()) if a["targets"] else 0
-        target_rate = max_target / span
 
         # Two attack shapes, scored independently; an endpoint is malicious if
-        # it trips EITHER. This is why one detector catches both a port sweep
-        # and a brute-force run.
-        scan = (
-            0.70 * min(n_ports / 200.0, 1.0) +       # touched many ports...
-            0.30 * min((n_ports / max(n_dst, 1)) / 100.0, 1.0)  # ...on few hosts
-        )
-        brute = (
-            0.60 * min(max_target / 250.0, 1.0) +    # many SYNs at one target...
-            0.40 * min(target_rate / 8.0, 1.0)       # ...at a high rate
-        )
+        # it trips EITHER. Rate-based, so duration-invariant.
+        #   scan  = new destination ports per second + fan-out onto few hosts
+        #   brute = SYNs/s at the busiest (host, port) + overall connection rate
+        port_rate = n_ports / span
+        fanout = n_ports / max(n_dst, 1)
+        target_rate = max_target / span
+        scan = 0.60 * min(port_rate / 3.0, 1.0) + 0.40 * min(fanout / 40.0, 1.0)
+        brute = 0.60 * min(target_rate / 5.0, 1.0) + 0.40 * min(conn_rate / 8.0, 1.0)
         score_v = max(scan, brute)
         rows.append({
             "ip": ip, "score": round(score_v, 3), "packets": a["packets"],

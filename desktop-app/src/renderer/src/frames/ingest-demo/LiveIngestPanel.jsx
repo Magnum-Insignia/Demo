@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import backend from '../../backend'
+import LiveCapturePanel from './LiveCapturePanel'
 
 const STATE_CLS = {
   streaming: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -129,6 +130,8 @@ export default function LiveIngestPanel() {
           </div>
         ))}
       </div>
+
+      <LiveCapturePanel />
     </div>
   )
 }
