@@ -1,0 +1,1026 @@
+{
+  "endpoints": [
+    {
+      "ip": "10.244.2.54",
+      "score": 1.0,
+      "packets": 3398,
+      "dst_hosts": 1,
+      "dst_ports": 805,
+      "top_target": 100,
+      "conn_rate_s": 57.4,
+      "signal": "scan"
+    },
+    {
+      "ip": "10.244.1.50",
+      "score": 1.0,
+      "packets": 2978,
+      "dst_hosts": 1,
+      "dst_ports": 628,
+      "top_target": 244,
+      "conn_rate_s": 50.0,
+      "signal": "scan"
+    },
+    {
+      "ip": "10.244.2.39",
+      "score": 1.0,
+      "packets": 944,
+      "dst_hosts": 1,
+      "dst_ports": 2,
+      "top_target": 472,
+      "conn_rate_s": 16.2,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.43",
+      "score": 1.0,
+      "packets": 1866,
+      "dst_hosts": 1,
+      "dst_ports": 763,
+      "top_target": 172,
+      "conn_rate_s": 31.8,
+      "signal": "scan"
+    },
+    {
+      "ip": "10.244.2.51",
+      "score": 1.0,
+      "packets": 1438,
+      "dst_hosts": 1,
+      "dst_ports": 493,
+      "top_target": 228,
+      "conn_rate_s": 24.3,
+      "signal": "scan"
+    },
+    {
+      "ip": "10.244.2.53",
+      "score": 0.926,
+      "packets": 926,
+      "dst_hosts": 2,
+      "dst_ports": 77,
+      "top_target": 388,
+      "conn_rate_s": 15.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.48",
+      "score": 0.838,
+      "packets": 552,
+      "dst_hosts": 1,
+      "dst_ports": 2,
+      "top_target": 276,
+      "conn_rate_s": 9.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.52",
+      "score": 0.828,
+      "packets": 534,
+      "dst_hosts": 1,
+      "dst_ports": 2,
+      "top_target": 268,
+      "conn_rate_s": 9.1,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.53",
+      "score": 0.753,
+      "packets": 476,
+      "dst_hosts": 2,
+      "dst_ports": 8,
+      "top_target": 232,
+      "conn_rate_s": 8.1,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.51",
+      "score": 0.729,
+      "packets": 446,
+      "dst_hosts": 1,
+      "dst_ports": 2,
+      "top_target": 224,
+      "conn_rate_s": 7.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.23",
+      "score": 0.289,
+      "packets": 176,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 88,
+      "conn_rate_s": 3.1,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.28",
+      "score": 0.277,
+      "packets": 168,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 84,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.27",
+      "score": 0.276,
+      "packets": 170,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 85,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.21",
+      "score": 0.276,
+      "packets": 168,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 84,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.27",
+      "score": 0.271,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.1,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.31",
+      "score": 0.271,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.1,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.31",
+      "score": 0.27,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.22",
+      "score": 0.269,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.40",
+      "score": 0.269,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.30",
+      "score": 0.268,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.19",
+      "score": 0.268,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.30",
+      "score": 0.268,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 3.0,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.7",
+      "score": 0.267,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.34",
+      "score": 0.267,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.19",
+      "score": 0.266,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.28",
+      "score": 0.266,
+      "packets": 160,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 80,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.8",
+      "score": 0.265,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.10",
+      "score": 0.265,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.46",
+      "score": 0.264,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.33",
+      "score": 0.264,
+      "packets": 162,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 81,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.37",
+      "score": 0.261,
+      "packets": 160,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 80,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.13",
+      "score": 0.261,
+      "packets": 160,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 80,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.36",
+      "score": 0.261,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.8",
+      "score": 0.259,
+      "packets": 158,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 79,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.25",
+      "score": 0.258,
+      "packets": 158,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 79,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.15",
+      "score": 0.257,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.4",
+      "score": 0.257,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.39",
+      "score": 0.255,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.18",
+      "score": 0.255,
+      "packets": 154,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 77,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.20",
+      "score": 0.254,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.52",
+      "score": 0.254,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.3",
+      "score": 0.253,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.42",
+      "score": 0.253,
+      "packets": 156,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 78,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.9",
+      "score": 0.251,
+      "packets": 154,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 77,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.35",
+      "score": 0.251,
+      "packets": 152,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 76,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.11",
+      "score": 0.25,
+      "packets": 152,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 76,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.29",
+      "score": 0.25,
+      "packets": 154,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 77,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.37",
+      "score": 0.247,
+      "packets": 152,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 76,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.47",
+      "score": 0.246,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.35",
+      "score": 0.245,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.45",
+      "score": 0.245,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.38",
+      "score": 0.245,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.29",
+      "score": 0.245,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.26",
+      "score": 0.245,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.46",
+      "score": 0.245,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.24",
+      "score": 0.245,
+      "packets": 148,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 74,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.11",
+      "score": 0.245,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.20",
+      "score": 0.245,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.16",
+      "score": 0.244,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.14",
+      "score": 0.244,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.17",
+      "score": 0.244,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.12",
+      "score": 0.244,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.44",
+      "score": 0.244,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.9,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.7",
+      "score": 0.244,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.38",
+      "score": 0.244,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.16",
+      "score": 0.244,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.22",
+      "score": 0.244,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.4",
+      "score": 0.243,
+      "packets": 148,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 74,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.32",
+      "score": 0.243,
+      "packets": 150,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 75,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.50",
+      "score": 0.243,
+      "packets": 148,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 74,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.26",
+      "score": 0.243,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.6",
+      "score": 0.242,
+      "packets": 146,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 73,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.13",
+      "score": 0.242,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.41",
+      "score": 0.242,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.10",
+      "score": 0.242,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.21",
+      "score": 0.242,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.8,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.2",
+      "score": 0.241,
+      "packets": 148,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 74,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.36",
+      "score": 0.241,
+      "packets": 146,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 73,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.41",
+      "score": 0.241,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.42",
+      "score": 0.241,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.24",
+      "score": 0.241,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.5",
+      "score": 0.241,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.49",
+      "score": 0.24,
+      "packets": 148,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 74,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.47",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.33",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.15",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.25",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.12",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.32",
+      "score": 0.24,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.7,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.44",
+      "score": 0.237,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.49",
+      "score": 0.237,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.3",
+      "score": 0.237,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.43",
+      "score": 0.234,
+      "packets": 144,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 72,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.48",
+      "score": 0.232,
+      "packets": 140,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 70,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.9",
+      "score": 0.232,
+      "packets": 142,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 71,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.2",
+      "score": 0.23,
+      "packets": 138,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 69,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.45",
+      "score": 0.229,
+      "packets": 138,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 69,
+      "conn_rate_s": 2.5,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.1.23",
+      "score": 0.228,
+      "packets": 136,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 68,
+      "conn_rate_s": 2.6,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.6",
+      "score": 0.227,
+      "packets": 138,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 69,
+      "conn_rate_s": 2.4,
+      "signal": "brute-force"
+    },
+    {
+      "ip": "10.244.2.14",
+      "score": 0.217,
+      "packets": 132,
+      "dst_hosts": 3,
+      "dst_ports": 1,
+      "top_target": 66,
+      "conn_rate_s": 2.4,
+      "signal": "brute-force"
+    }
+  ],
+  "evaluation": {
+    "tp": 10,
+    "fp": 0,
+    "fn": 0,
+    "tn": 90,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "threshold": 0.5
+  },
+  "malicious": [
+    "10.244.1.48",
+    "10.244.1.50",
+    "10.244.1.51",
+    "10.244.1.52",
+    "10.244.1.53",
+    "10.244.2.39",
+    "10.244.2.43",
+    "10.244.2.51",
+    "10.244.2.53",
+    "10.244.2.54"
+  ]
+}

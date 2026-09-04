@@ -1,0 +1,49 @@
+# The 10 malicious endpoints. Each resolves the victim service to real pod IPs
+# and runs two classic recon/brute phases against them:
+#   phase 1  port sweep 1..1024 (high dst-port fan-out to one host)
+#   phase 2  tight connect loop on 21 and 22 (brute-force cadence, one port)
+# All traffic is real TCP to real pod IPs — nothing is fabricated.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: malicious
+  namespace: netsim
+  labels: { tier: malicious }
+spec:
+  replicas: 10
+  selector: { matchLabels: { role: malicious } }
+  template:
+    metadata:
+      labels: { role: malicious, tier: malicious }
+    spec:
+      terminationGracePeriodSeconds: 2
+      containers:
+        - name: attacker
+          image: busybox:1.36
+          resources:
+            requests: { cpu: "5m", memory: "8Mi" }
+            limits:   { cpu: "60m", memory: "32Mi" }
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              sleep 8   # let victims come up and DNS populate
+              targets() { nslookup victim.netsim.svc.cluster.local 2>/dev/null \
+                          | awk '/^Address: /{print $2}' | grep -E '^10\.' ; }
+              while true; do
+                for V in $(targets); do
+                  # phase 1: port sweep 1..1024
+                  P=1
+                  while [ $P -le 1024 ]; do
+                    nc -w 1 -z "$V" $P 2>/dev/null
+                    P=$((P+1))
+                  done
+                  # phase 2: brute-force cadence on ftp + ssh
+                  n=0
+                  while [ $n -lt 300 ]; do
+                    nc -w 1 -z "$V" 21 2>/dev/null
+                    nc -w 1 -z "$V" 22 2>/dev/null
+                    n=$((n+1))
+                  done
+                done
+                sleep 5
+              done

@@ -43,3 +43,6 @@ data/pcap/
 # Python
 __pycache__/
 *.pyc
+
+# k8s demo captures
+k8s-demo/caps/
