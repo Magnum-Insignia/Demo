@@ -78,6 +78,31 @@ def export():
                     w[f] = _clean(r[f])
             windows.append(w)
 
+        # Edge list, when one was built for this day.
+        gpath = os.path.join(PROCESSED, f"edges_{cid}.parquet")
+        graph = None
+        if os.path.exists(gpath):
+            g = pd.read_parquet(gpath)
+            top = (g.groupby(["src_ip", "dst_ip"])
+                     .agg(nFlows=("n_flows", "sum"), attackFlows=("n_attack_flows", "sum"))
+                     .reset_index().sort_values("nFlows", ascending=False).head(400))
+            graph = {
+                "edges": int(len(g)),
+                "windows": int(g["window_start"].nunique()),
+                "start": g["window_start"].min().isoformat(),
+                "end": g["window_start"].max().isoformat(),
+                "uniqueSrc": int(g["src_ip"].nunique()),
+                "uniqueDst": int(g["dst_ip"].nunique()),
+                "attackEdges": int(g["is_attack"].sum()),
+                # Provenance. 1 means the addresses were generated, not captured.
+                "syntheticEndpoints": int(g["synthetic_endpoints"].max()),
+                "top": [
+                    {"src": r.src_ip, "dst": r.dst_ip, "nFlows": int(r.nFlows),
+                     "isAttack": int(r.attackFlows > 0)}
+                    for r in top.itertuples()
+                ],
+            }
+
         benign = d[d["label"].str.lower() == "benign"]["n_flows"]
         captures.append({
             "id": cid,
@@ -106,6 +131,7 @@ def export():
                 for _, e in attack_eps.iterrows()
             ],
             "series": windows,
+            "graph": graph,
         })
 
     header = '''/*

@@ -31,7 +31,8 @@ def _fmt(ts):
     return pd.Timestamp(ts).strftime("%Y-%m-%d %H:%M")
 
 
-def extract_day(path: str, capture_id: str, window_seconds: int = 60, nrows: int | None = None) -> dict:
+def extract_day(path: str, capture_id: str, window_seconds: int = 60, nrows: int | None = None,
+                synthetic_endpoints: bool = False) -> dict:
     os.makedirs(OUT, exist_ok=True)
     print(f"\n=== {capture_id} :: {os.path.basename(path)} ===")
 
@@ -61,12 +62,20 @@ def extract_day(path: str, capture_id: str, window_seconds: int = 60, nrows: int
     result = {"capture_id": capture_id, "summary": summary, "windows": len(feats), "episodes": len(attack_eps)}
 
     try:
-        edges = build_edges(df, window_seconds=window_seconds, capture_id=capture_id)
+        edges = build_edges(df, window_seconds=window_seconds, capture_id=capture_id,
+                            synthetic_endpoints=synthetic_endpoints)
         gpath = os.path.join(OUT, f"edges_{capture_id}.parquet")
         edges.to_parquet(gpath, index=False)
         cov = edge_coverage(edges)
         print(f"  -> {os.path.relpath(gpath)}  ({cov['edges']:,} edges over {cov['windows']:,} windows, "
               f"{_fmt(cov['start'])[-5:]} -> {_fmt(cov['end'])[-5:]})")
+        if cov.get("synthetic_endpoints"):
+            print("     " + "!" * 68)
+            print("     !! SYNTHETIC ENDPOINTS. This file's CSV carries no addressing, so")
+            print("     !! every src_ip/dst_ip above was GENERATED, not captured. Volumes,")
+            print("     !! timing, ports, protocols and labels are real; the addresses are")
+            print("     !! not. Every row carries synthetic_endpoints=1.")
+            print("     " + "!" * 68)
         result["edges"] = cov
     except NoAddressingError as e:
         print(f"  !! edges NOT built: {e}")
@@ -77,7 +86,8 @@ def extract_day(path: str, capture_id: str, window_seconds: int = 60, nrows: int
 
 def cmd_extract(args):
     extract_day(args.day, args.id or os.path.splitext(os.path.basename(args.day))[0],
-                window_seconds=args.window, nrows=args.nrows)
+                window_seconds=args.window, nrows=args.nrows,
+                synthetic_endpoints=getattr(args, "synthetic_endpoints", False))
 
 
 def cmd_extract_all(args):
@@ -184,11 +194,15 @@ def main():
     e.add_argument("--id")
     e.add_argument("--window", type=int, default=60)
     e.add_argument("--nrows", type=int)
+    e.add_argument("--synthetic-endpoints", action="store_true",
+                   help="Days whose CSV has no Src/Dst IP: generate endpoints so a graph can be "
+                        "drawn. Output is marked synthetic_endpoints=1 on every row.")
     e.set_defaults(fn=cmd_extract)
 
     a = sub.add_parser("extract-all", help="extract every capture in data/raw/")
     a.add_argument("--window", type=int, default=60)
     a.add_argument("--nrows", type=int)
+    a.add_argument("--synthetic-endpoints", action="store_true")
     a.set_defaults(fn=cmd_extract_all)
 
     c = sub.add_parser("capture", help="live packet capture off a local interface")
