@@ -25,7 +25,11 @@
  *   backend.evidence    forensic evidence bundles
  *   backend.session     service health for the operator console
  */
-import { resource, observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability } from './transport'
+import {
+  resource, observe, connect, onRevision, backendStatus,
+  runLiveCapture, liveCaptureCapability,
+  trafficCapability, trafficStatus, generateTraffic, stopTraffic
+} from './transport'
 import { OPERATIONS } from './operations'
 
 export const backend = Object.fromEntries(Object.keys(OPERATIONS).map((name) => [name, resource(name)]))
@@ -36,6 +40,14 @@ export const backend = Object.fromEntries(Object.keys(OPERATIONS).map((name) => 
 backend.liveCapture = {
   run: runLiveCapture,
   capability: liveCaptureCapability
+}
+
+// Traffic generation: launch/stop the distributed attack on the cluster.
+backend.traffic = {
+  capability: trafficCapability,
+  status: trafficStatus,
+  generate: generateTraffic,
+  stop: stopTraffic
 }
 
 export { observe, connect, onRevision, backendStatus, runLiveCapture, liveCaptureCapability }

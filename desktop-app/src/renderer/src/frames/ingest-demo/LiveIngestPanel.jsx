@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import backend from '../../backend'
+import TrafficGenerator from './TrafficGenerator'
 import LiveCapturePanel from './LiveCapturePanel'
 
 const STATE_CLS = {
@@ -131,6 +132,7 @@ export default function LiveIngestPanel() {
         ))}
       </div>
 
+      <TrafficGenerator />
       <LiveCapturePanel />
     </div>
   )

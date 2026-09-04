@@ -35,6 +35,7 @@ let host = DEFAULT_HOST
 let connected = false
 let lastError = null
 let liveCaptureCap = { available: false }
+let trafficCap = { available: false }
 let inFlight = new Set()
 let seq = 0
 let stream = null
@@ -91,6 +92,27 @@ export async function runLiveCapture({ seconds = 8, limit = 4000 } = {}) {
   return res.result
 }
 
+// Traffic generation: launch/stop the distributed attack on the cluster and
+// read live pod counts. Host-only, like live capture.
+export function trafficCapability() {
+  return trafficCap
+}
+export async function trafficStatus() {
+  if (!connected) throw new Error('offline — traffic control needs the backend host')
+  const res = await fetch(host + '/traffic/status').then((r) => r.json())
+  return res.result
+}
+export async function generateTraffic({ profile = 'known', replicas = 10 } = {}) {
+  if (!connected) throw new Error('offline — traffic control needs the backend host')
+  const res = await post('/traffic/generate', { profile, replicas })
+  return res.result
+}
+export async function stopTraffic({ profile = 'all' } = {}) {
+  if (!connected) throw new Error('offline — traffic control needs the backend host')
+  const res = await post('/traffic/stop', { profile })
+  return res.result
+}
+
 function keyFor(resourceName, operation, payload) {
   return `${resourceName}.${operation}:${payload === undefined ? '' : JSON.stringify(payload)}`
 }
@@ -125,6 +147,7 @@ export async function connect({ url, timeoutMs = 1500 } = {}) {
     const health = await fetch(host + '/health', { signal: controller.signal }).then((r) => r.json())
     clearTimeout(timer)
     liveCaptureCap = health.liveCapture || { available: false }
+    trafficCap = health.traffic || { available: false }
 
     const snapshot = await post('/snapshot', { operations: SNAPSHOT_OPERATIONS })
     Object.entries(snapshot.results).forEach(([opKey, value]) => cache.set(`${opKey}:`, value))

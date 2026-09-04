@@ -1,0 +1,49 @@
+# The UNKNOWN attack profile (baseplan: "one known and one unknown").
+#
+# Where the known attacker sweeps ports 1..1024 in order and brute-forces 21/22,
+# this one is deliberately different: it hits RANDOMISED high ports on a random
+# victim, at an irregular cadence -- the "randomised port access pattern" the
+# brief calls out, and a shape the detector was not tuned on. It still trips the
+# fan-out signal (many distinct destination ports to one host), which is the
+# point: the detector generalises to an unseen pattern rather than matching a
+# known signature. Starts scaled to 0; the frontend scales it up on demand.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: malicious-unknown
+  namespace: netsim
+  labels: { tier: malicious, profile: unknown }
+spec:
+  replicas: 0
+  selector: { matchLabels: { role: malicious, profile: unknown } }
+  template:
+    metadata:
+      labels: { role: malicious, profile: unknown, tier: malicious }
+    spec:
+      terminationGracePeriodSeconds: 2
+      containers:
+        - name: attacker
+          image: busybox:1.36
+          resources:
+            requests: { cpu: "5m", memory: "8Mi" }
+            limits:   { cpu: "60m", memory: "32Mi" }
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              sleep 5
+              targets() { nslookup victim.netsim.svc.cluster.local 2>/dev/null \
+                          | awk '/^Address: /{print $2}' | grep -E '^10\.' ; }
+              while true; do
+                set -- $(targets)
+                [ $# -eq 0 ] && { sleep 3; continue; }
+                # pick one victim at random
+                eval V=\${$(( (RANDOM % $#) + 1 ))}
+                # probe a burst of randomised high ports (evasive recon)
+                n=0
+                while [ $n -lt 400 ]; do
+                  P=$(( (RANDOM % 64000) + 1024 ))
+                  nc -w 1 -z "$V" $P 2>/dev/null
+                  n=$((n+1))
+                done
+                sleep $(( (RANDOM % 3) + 1 ))
+              done
