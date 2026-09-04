@@ -1,30 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import backend from '../../backend'
 
 /*
  * Live Capture.
  *
- * Clicking Capture runs a real tcpdump on the running cluster's pod bridge
- * (via the backend host) and shows the packets it saw and the per-endpoint
- * verdicts the detector reached — right here, not on a separate dashboard.
- * Every row is a packet that crossed the wire; nothing is generated.
+ * Runs on its own: as long as monitoring is on, it captures a window off the
+ * cluster pod bridge, scores every endpoint, refreshes the display, and
+ * immediately captures the next window — a continuous passive feed, not a
+ * per-click action. Every row is a packet that crossed the wire; nothing is
+ * generated.
  *
  * The monitor is passive: it does not launch traffic. Attacks are generated
  * out of band by the operator (k8s-demo/attack.sh) directly against the
- * cluster. The status line below is a read-only observation of pod counts, so
- * you can see whether the network is quiet or busy — it does not control it.
+ * cluster. The status line is a read-only observation of pod counts.
  *
  * If the host can't reach a capture source (offline, or the cluster is down)
  * the panel says so instead of showing invented traffic.
  */
+const WINDOW_SECONDS = 8
+
 export default function LiveCapturePanel() {
   const cap = backend.liveCapture.capability()
+  const [monitoring, setMonitoring] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [seconds, setSeconds] = useState(8)
   const [run, setRun] = useState(null)
   const [error, setError] = useState(null)
   const [cluster, setCluster] = useState(null)
+  const [cycles, setCycles] = useState(0)
+  const monitorRef = useRef(monitoring)
+  monitorRef.current = monitoring
 
+  // Read-only cluster status poll (observed pod counts).
   useEffect(() => {
     if (!cap.available) return
     let alive = true
@@ -37,19 +43,38 @@ export default function LiveCapturePanel() {
     }
   }, [cap.available])
 
-  async function capture() {
-    setBusy(true)
-    setError(null)
-    try {
-      const r = await backend.liveCapture.run({ seconds })
-      if (!r.available) setError(r.reason || 'no live-capture source on this host')
-      else setRun(r)
-    } catch (e) {
-      setError(String(e.message || e))
-    } finally {
-      setBusy(false)
+  // The capture loop: capture -> score -> refresh -> capture again, until
+  // monitoring is turned off or the panel unmounts. Never overlaps itself.
+  useEffect(() => {
+    if (!cap.available || !monitoring) return
+    let alive = true
+    ;(async () => {
+      while (alive && monitorRef.current) {
+        setBusy(true)
+        try {
+          const r = await backend.liveCapture.run({ seconds: WINDOW_SECONDS })
+          if (!alive) return
+          if (!r.available) {
+            setError(r.reason || 'no live-capture source on this host')
+            break
+          }
+          setRun(r)
+          setCycles((n) => n + 1)
+          setError(null)
+        } catch (e) {
+          if (!alive) return
+          setError(String(e.message || e))
+          await new Promise((res) => setTimeout(res, 3000)) // back off on error
+        } finally {
+          if (alive) setBusy(false)
+        }
+        await new Promise((res) => setTimeout(res, 800)) // brief gap between windows
+      }
+    })()
+    return () => {
+      alive = false
     }
-  }
+  }, [cap.available, monitoring])
 
   const ev = run?.evaluation
 
@@ -77,41 +102,25 @@ export default function LiveCapturePanel() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {[8, 15, 30].map((s) => (
-              <button
-                key={s}
-                onClick={() => setSeconds(s)}
-                disabled={busy}
-                className={
-                  'text-[10px] font-mono font-bold px-2 py-1 rounded border ' +
-                  (seconds === s ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-200 text-slate-500 hover:bg-slate-50')
-                }
-              >
-                {s}s
-              </button>
-            ))}
-          </div>
+          {monitoring && (
+            <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border bg-blue-50 border-blue-200 text-blue-700 uppercase whitespace-nowrap">
+              <span className={'w-1.5 h-1.5 rounded-full bg-blue-500 ' + (busy ? 'animate-pulse' : '')} />
+              {busy ? `capturing ${WINDOW_SECONDS}s…` : `monitoring · ${cycles} windows`}
+            </span>
+          )}
           <button
-            onClick={capture}
-            disabled={busy || !cap.available}
+            onClick={() => setMonitoring((m) => !m)}
+            disabled={!cap.available}
             className={
               'text-xs font-mono font-bold px-4 py-1.5 rounded-lg border transition-colors ' +
-              (busy
-                ? 'bg-blue-50 border-blue-200 text-blue-600'
-                : cap.available
-                  ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed')
+              (!cap.available
+                ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                : monitoring
+                  ? 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  : 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700')
             }
           >
-            {busy ? (
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                capturing {seconds}s…
-              </span>
-            ) : (
-              'Capture'
-            )}
+            {monitoring ? 'Pause' : 'Resume monitoring'}
           </button>
         </div>
       </div>
@@ -200,7 +209,7 @@ export default function LiveCapturePanel() {
       {!run && !error && (
         <p className="text-[11px] text-slate-500">
           {cap.available
-            ? 'Press Capture to listen on the cluster pod bridge and score every endpoint that appears.'
+            ? 'Listening on the cluster pod bridge — the first window will appear in a few seconds.'
             : 'Live capture runs on the backend host. Start it with the cluster up (k8s-demo/run-demo.sh) to enable this.'}
         </p>
       )}
