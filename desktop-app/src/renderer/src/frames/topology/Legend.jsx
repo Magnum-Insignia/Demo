@@ -1,4 +1,4 @@
-import { ROLES, PROTOCOL_STYLE, FLAGGED_STYLE } from './graphModel'
+import { ROLES, PROTOCOL_STYLE, FLAGGED_STYLE } from './encoding'
 import { iconDataUri } from './deviceIcons'
 
 export default function Legend() {

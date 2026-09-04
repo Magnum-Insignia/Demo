@@ -15,8 +15,7 @@ export default function IngestPanel({ sourceMode, setSourceMode, run, onPickFile
     <div className="glass-panel rounded-xl p-5 space-y-4">
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-bold text-sm text-slate-900">Ingest</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Load a capture and run it through the offline inference pipeline — nothing here leaves this machine.</p>
+          <h3 className="font-bold text-sm text-slate-900">Offline Capture</h3>
         </div>
         <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 uppercase whitespace-nowrap">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -35,7 +34,7 @@ export default function IngestPanel({ sourceMode, setSourceMode, run, onPickFile
           onClick={() => setSourceMode('sample')}
           className={'flex-1 py-2 rounded-lg border transition-colors ' + (sourceMode === 'sample' ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-200 text-slate-500 hover:bg-slate-50')}
         >
-          Load sample dataset
+          Load reference dataset
         </button>
       </div>
 
@@ -62,7 +61,7 @@ export default function IngestPanel({ sourceMode, setSourceMode, run, onPickFile
           <p className="text-[10.5px] text-slate-400 mt-1">or click to browse local files</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {SAMPLE_DATASETS.map((s) => (
             <button
               key={s.id}
@@ -74,6 +73,14 @@ export default function IngestPanel({ sourceMode, setSourceMode, run, onPickFile
             >
               <div className="text-xs font-bold text-slate-800">{s.label}</div>
               <div className="text-[10px] text-slate-400 font-mono mt-1 truncate">{s.filename}</div>
+              {s.schedule && (
+                <div className="text-[9.5px] text-slate-400 mt-1 leading-snug">{s.schedule}</div>
+              )}
+              {s.windows && (
+                <div className="text-[9.5px] font-mono text-emerald-700 mt-1">
+                  extracted &middot; {s.windows} windows &middot; {s.flows.toLocaleString()} flows
+                </div>
+              )}
             </button>
           ))}
         </div>

@@ -3,8 +3,8 @@ import { useAuth } from './AuthContext'
 import { ROLES } from './roles'
 
 const ROLE_CARDS = [
-  { id: 'soc_director', title: 'SOC Director', desc: 'Oversight across all monitoring modules.', icon: 'D' },
-  { id: 'soc_analyst', title: 'SOC Analyst', desc: 'Day-to-day telemetry & incident triage.', icon: 'A' }
+  { id: 'soc_director', title: 'SOC Director', desc: 'Oversight, alarm policy, action authorisation and record approval.', icon: 'D' },
+  { id: 'soc_analyst', title: 'SOC Analyst', desc: 'Day-to-day telemetry, triage and investigation.', icon: 'A' }
 ]
 
 export default function LoginPage() {
@@ -84,7 +84,7 @@ export default function LoginPage() {
           Continue to Stage 2 &rarr;
         </button>
         <div className="text-[10px] text-slate-400 text-center font-mono">
-          Demo mode &middot; any username/password is accepted &middot; select a role above
+          Zero-trust session &middot; select a role above &middot; stage 2 verification is required before any module loads
         </div>
       </form>
     </div>

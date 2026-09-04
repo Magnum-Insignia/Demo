@@ -32,3 +32,14 @@ Thumbs.db
 
 # references
 docs
+
+# CIC-IDS-2018 source captures (~1 GB) and extraction output.
+# Re-create with:  python -m pipeline.run extract-all
+# The exported captures.js IS committed, so the demo runs without them.
+data/raw/
+data/processed/
+data/pcap/
+
+# Python
+__pycache__/
+*.pyc

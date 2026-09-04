@@ -1,5 +1,7 @@
 import { Doughnut } from 'react-chartjs-2'
-import { STAGES } from '../../data/dataEngine'
+import backend from '../../backend'
+
+const STAGES = backend.telemetry.stages()
 import { STAGE_COLORS, getColors } from '../../charts/chartTheme'
 import { useTheme } from '../../theme/ThemeContext'
 

@@ -7,7 +7,7 @@ function createWindow() {
     height: 1000,
     minWidth: 1180,
     minHeight: 720,
-    title: 'AI World Model Predictive Cyber Defense Dashboard',
+    title: 'OcuNet — NAGA-Net Predictive Cyber Defense',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),

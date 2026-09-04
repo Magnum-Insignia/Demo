@@ -60,7 +60,8 @@ export default function BiometricStage() {
         </button>
 
         <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center leading-relaxed">
-          Simulated biometric step — no real sensor is used. Any tap succeeds after a short scan animation.
+          Step-up verification. The session is raised to MFA level only on success — until then no module renders and no
+          MFA-gated authority is usable.
         </div>
       </div>
     </div>

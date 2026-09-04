@@ -44,7 +44,7 @@ export default function NetworkStabilityChart({ data, panelId }) {
         <div>
           <h3 className="font-bold text-sm text-slate-900">Network Stability Chart ({data.windowLabel})</h3>
           <p className="text-xs text-slate-500">
-            Historical Telemetry Stream vs. AI World Model Forecast Horizon (K={data.kSteps} Steps)
+            Historical Telemetry Stream vs. NAGA-Net Forecast Horizon (K={data.kSteps} Steps)
           </p>
         </div>
         <button

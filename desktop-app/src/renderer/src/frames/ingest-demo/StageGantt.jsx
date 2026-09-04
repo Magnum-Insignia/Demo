@@ -1,4 +1,6 @@
-import { STAGES } from '../../data/dataEngine'
+import backend from '../../backend'
+
+const STAGES = backend.telemetry.stages()
 import { STAGE_COLORS } from '../../charts/chartTheme'
 
 // Horizontal MITRE-stage strip aligned under the probability timeline's

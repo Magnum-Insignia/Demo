@@ -3,8 +3,9 @@ import CytoscapeComponent from 'react-cytoscapejs'
 import RequirePermission from '../../auth/RequirePermission'
 import { PERMISSIONS } from '../../auth/permissions'
 import { buildStylesheet, themeTokens } from './graphStyle'
-import { buildElements, findDevice, findEdge } from './elementsBuilder'
-import { riskAt, riskFillColor, ROLES, DEVICES } from './graphModel'
+import { buildElements, findDevice, findEdge, ALL_DEVICES } from './elementsBuilder'
+import { riskAt, riskFillColor, ROLES } from './encoding'
+import backend from '../../backend'
 import DevicePropertiesPanel from './DevicePropertiesPanel'
 import EdgePropertiesPanel from './EdgePropertiesPanel'
 import AttackVectorPanel from './AttackVectorPanel'
@@ -169,7 +170,7 @@ function TopologyGraph() {
   // Status callout below the canvas (per docs/design-assets): surfaces
   // whichever device currently has the highest forecast risk at time t.
   const topRiskDevice = useMemo(
-    () => DEVICES.reduce((worst, d) => (riskAt(d, t) > riskAt(worst, t) ? d : worst), DEVICES[0]),
+    () => ALL_DEVICES.reduce((worst, d) => (riskAt(d, t) > riskAt(worst, t) ? d : worst), ALL_DEVICES[0]),
     [t]
   )
   const topRisk = riskAt(topRiskDevice, t)

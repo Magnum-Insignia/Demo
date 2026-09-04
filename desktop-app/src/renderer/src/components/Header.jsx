@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { WINDOWS, K_STEPS } from '../data/dataEngine'
+import backend, { backendStatus } from '../backend'
 import { useAuth } from '../auth/AuthContext'
 import { useTheme } from '../theme/ThemeContext'
 
@@ -12,10 +12,16 @@ function useClock() {
   return now
 }
 
+const WINDOWS = backend.telemetry.windows()
+const K_STEPS = backend.telemetry.horizons()
+
 export default function Header({ windowKey, setWindowKey, kSteps, setKSteps, resimulate }) {
   const clock = useClock()
   const { user, role, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  // Re-read on every render; App bumps a revision whenever the connection state
+  // changes, so this badge follows the host going away and coming back.
+  const conn = backendStatus()
 
   return (
     <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm">
@@ -61,7 +67,7 @@ export default function Header({ windowKey, setWindowKey, kSteps, setKSteps, res
 
         <button
           onClick={resimulate}
-          title="Regenerate synthetic telemetry with a new random seed"
+          title="Re-run the NAGA-Net K-step rollout from the current observed state"
           className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 font-bold hover:bg-slate-100 hover:text-slate-900 transition-colors"
         >
           <span>&#8635;</span>
@@ -69,6 +75,21 @@ export default function Header({ windowKey, setWindowKey, kSteps, setKSteps, res
         </button>
 
         <div className="font-mono text-xs text-slate-500">{clock.toLocaleString()}</div>
+
+        <div
+          title={
+            conn.connected
+              ? `Backend host ${conn.host} — live`
+              : `Backend host unreachable (${conn.lastError || 'no host'}). Serving from the on-device engine.`
+          }
+          className={
+            'flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border font-mono text-[10px] font-bold uppercase whitespace-nowrap ' +
+            (conn.connected ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700')
+          }
+        >
+          <span className={'w-1.5 h-1.5 rounded-full ' + (conn.connected ? 'bg-emerald-500' : 'bg-amber-500')} />
+          <span>{conn.connected ? 'Backend live' : 'On-device'}</span>
+        </div>
 
         <div className="flex items-center space-x-3 border-l border-slate-200 pl-4">
           <button

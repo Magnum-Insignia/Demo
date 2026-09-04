@@ -1,7 +1,10 @@
-// Synthetic system/security log stream — swap for a real log pipeline later.
-// Separate from database-access/recordsModel.js: this is operational/system
-// event logging (what CERT-In's 180-day retention mandate targets), not raw
-// ingested network telemetry.
+/*
+ * Backend service: the system & security event stream.
+ *
+ * Operational/system event logging — what CERT-In's 180-day retention
+ * mandate targets — as distinct from ./records.js, which holds the raw
+ * ingested network telemetry the engine reasons over.
+ */
 
 function mulberry32(seed) {
   return function () {
@@ -16,12 +19,12 @@ function mulberry32(seed) {
 export const SEVERITIES = ['info', 'warning', 'error', 'critical']
 
 const MESSAGES = {
-  info: ['Scheduled ingestion batch completed', 'World model checkpoint saved', 'User session started', 'NTP sync OK (time.nic.in)'],
+  info: ['Scheduled ingestion batch completed', 'NAGA-Net checkpoint saved', 'User session started', 'NTP sync OK (time.nic.in)', 'Redis ingest queue drained'],
   warning: ['Elevated retry rate on flow ingestion', 'Disk usage above 75% on log volume', 'Slow query on audit datastore'],
-  error: ['Failed to reach packet-capture agent on RTR-CORE', 'Authentication backend timeout', 'Model inference latency SLA breached'],
-  critical: ['Infiltration probability crossed breach threshold on Server-HWA', 'Log retention job failed — CERT-In 180-day window at risk']
+  error: ['Failed to reach packet-capture agent on RTR-CORE', 'Authentication backend timeout', 'NAGA-Net inference latency SLA breached'],
+  critical: ['Infiltration probability crossed breach threshold on Server-HWA', 'Log retention job failed — CERT-In 180-day window at risk', 'Capture agent stopped delivering — unobserved route on VLAN 90']
 }
-const SOURCES = ['ingestion-svc', 'world-model', 'auth-gateway', 'audit-store', 'ntp-sync']
+const SOURCES = ['ingestion-svc', 'naga-net', 'auth-gateway', 'audit-store', 'redis-queue', 'ntp-sync']
 
 export function generateLogs(seedTag) {
   const rnd = mulberry32((seedTag || 'logs').length * 104729 + 7)

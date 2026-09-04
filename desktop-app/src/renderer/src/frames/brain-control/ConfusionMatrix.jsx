@@ -1,4 +1,6 @@
-import { CONFUSION_MATRIX, WORLD_MODEL_METRICS } from './benchmarkData'
+import backend from '../../backend'
+
+const { confusion: CONFUSION_MATRIX, metrics: ENGINE_METRICS, baseline: BASELINE_METRICS } = backend.engine.evaluation()
 
 // Sequential "Blues" ramp (matplotlib default for sklearn's
 // ConfusionMatrixDisplay) — cell shade and the colorbar both interpolate
@@ -31,7 +33,7 @@ export default function ConfusionMatrix() {
   return (
     <div className="glass-panel rounded-xl p-5 h-full flex flex-col">
       <h3 className="font-bold text-xs text-slate-900 text-center">Confusion matrix, without normalization</h3>
-      <p className="text-[10.5px] text-slate-500 mt-0.5 mb-3 text-center">Held-out test set &middot; predicted vs. true MITRE stage</p>
+      <p className="text-[10.5px] text-slate-500 mt-0.5 mb-3 text-center">Held-out evaluation split</p>
 
       <div className="flex-1 flex items-center justify-center gap-5">
         <div className="flex items-end">
@@ -91,10 +93,21 @@ export default function ConfusionMatrix() {
       </div>
 
       <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
-        <Stat label="F1 (macro)" value={WORLD_MODEL_METRICS.f1} />
-        <Stat label="Precision (macro)" value={WORLD_MODEL_METRICS.precision} />
-        <Stat label="Recall (macro)" value={WORLD_MODEL_METRICS.recall} />
-        <Stat label="FPR (macro)" value={WORLD_MODEL_METRICS.fpr} />
+        <Stat label="F1 (macro)" value={ENGINE_METRICS.f1} />
+        <Stat label="Precision (macro)" value={ENGINE_METRICS.precision} />
+        <Stat label="Recall (macro)" value={ENGINE_METRICS.recall} />
+        <Stat label="FPR (macro)" value={ENGINE_METRICS.fpr} />
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between text-[9.5px] font-mono text-slate-500">
+        <span>
+          NAGA-Net accuracy <b className="text-slate-800">{(ENGINE_METRICS.accuracy * 100).toFixed(1)}%</b>
+        </span>
+        <span>
+          {BASELINE_METRICS.label}: acc <b className="text-slate-800">{(BASELINE_METRICS.accuracy * 100).toFixed(1)}%</b> &middot; F1{' '}
+          <b className="text-slate-800">{(BASELINE_METRICS.f1 * 100).toFixed(1)}%</b> &middot; FPR{' '}
+          <b className="text-slate-800">{(BASELINE_METRICS.fpr * 100).toFixed(1)}%</b>
+        </span>
       </div>
     </div>
   )

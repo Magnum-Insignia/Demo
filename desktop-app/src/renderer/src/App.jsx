@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { onRevision } from './backend'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import { useDashboardData } from './hooks/useDashboardData'
@@ -57,6 +58,12 @@ function Gate() {
 }
 
 export default function App() {
+  // A background revalidation landing, a live tick from the host, or the
+  // connection dropping — all of them arrive here as one revision bump, and the
+  // tree re-reads the backend. Nothing below needs to know which it was.
+  const [, setRevision] = useState(0)
+  useEffect(() => onRevision(() => setRevision((r) => r + 1)), [])
+
   return (
     <ThemeProvider>
       <AuthProvider>

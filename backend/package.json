@@ -1,0 +1,14 @@
+{
+  "name": "ocunet-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OcuNet backend host — ingestion pipeline, datastore and the NAGA-Net engine host",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

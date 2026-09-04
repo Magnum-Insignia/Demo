@@ -11,7 +11,7 @@
  * Contract for a frame component: it receives `{ dashboardData, onNavigate }`
  * as props (dashboardData: only the Dashboard frame currently uses it;
  * onNavigate(frameId): switches the active sidebar frame, for cross-frame
- * deep links like Ingest/Offline Demo's flagged-flow row -> Explainability —
+ * deep links like Ingest's flagged-flow row -> Explainability —
  * everything else can ignore either prop) and renders its own content; it
  * manages all of its own state/data.
  */
@@ -19,6 +19,9 @@ import { PERMISSIONS } from '../auth/permissions'
 import DashboardFrame from './dashboard'
 import TopologyFrame from './topology'
 import BrainControlFrame from './brain-control'
+import SimulationFrame from './simulation'
+import AlertsFrame from './alerts'
+import ActionPlanFrame from './action-plan'
 import IngestDemoFrame from './ingest-demo'
 import DatabaseAccessFrame from './database-access'
 import LogsFrame from './logs'
@@ -29,7 +32,10 @@ export const FRAMES = [
   { id: 'dashboard', label: 'Dashboard', permission: PERMISSIONS.NAV_DASHBOARD, Component: DashboardFrame },
   { id: 'topology', label: 'Network Topology', permission: PERMISSIONS.NAV_TOPOLOGY, Component: TopologyFrame },
   { id: 'brain-control', label: 'Brain Control', permission: PERMISSIONS.NAV_BRAIN_CONTROL, Component: BrainControlFrame },
-  { id: 'ingest-demo', label: 'Ingest / Offline Demo', permission: PERMISSIONS.NAV_INGEST_DEMO, Component: IngestDemoFrame },
+  { id: 'simulation', label: 'Simulation', permission: PERMISSIONS.NAV_SIMULATION, Component: SimulationFrame },
+  { id: 'alerts', label: 'Alerts', permission: PERMISSIONS.NAV_ALERTS, Component: AlertsFrame },
+  { id: 'action-plan', label: 'Action Plan', permission: PERMISSIONS.NAV_ACTION_PLAN, Component: ActionPlanFrame },
+  { id: 'ingest-demo', label: 'Ingest', permission: PERMISSIONS.NAV_INGEST_DEMO, Component: IngestDemoFrame },
   { id: 'database-access', label: 'Database Access', permission: PERMISSIONS.NAV_DATABASE_ACCESS, Component: DatabaseAccessFrame },
   { id: 'logs', label: 'Logs', permission: PERMISSIONS.NAV_LOGS, Component: LogsFrame },
   { id: 'cli-access', label: 'CLI Access', permission: PERMISSIONS.NAV_CLI_ACCESS, Component: CliAccessFrame },

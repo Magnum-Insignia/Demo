@@ -1,17 +1,24 @@
 import { useMemo, useState } from 'react'
-import { generateRecords, SOURCES } from './recordsModel'
+import ChangeControl from './ChangeControl'
+import backend from '../../backend'
+
+const SOURCES = backend.datastore.sources()
 
 /*
  * Frame: Database Access
  * Browses the underlying ingested telemetry store (flow records, packet
  * captures, auth logs) — separate from Logs (system/security event stream)
  * and from the Dashboard (aggregated/derived analytics).
+ *
+ * The store is read-only from this view by design. Amendments go through the
+ * change-control panel below, which requires a quorum of independent
+ * approvals — see ChangeControl.jsx.
  */
 
 export default function DatabaseAccessFrame() {
   const [source, setSource] = useState(SOURCES[0].id)
   const [query, setQuery] = useState('')
-  const records = useMemo(() => generateRecords(source), [source])
+  const records = useMemo(() => backend.datastore.query({ source }), [source])
   const filtered = useMemo(
     () => (query.trim() ? records.filter((r) => JSON.stringify(r).toLowerCase().includes(query.toLowerCase())) : records),
     [records, query]
@@ -24,7 +31,7 @@ export default function DatabaseAccessFrame() {
       <div className="glass-panel rounded-xl p-5 space-y-3">
         <div>
           <h2 className="font-bold text-sm text-slate-900">Database Access</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Browse the raw ingested telemetry store behind the dashboard's derived analytics.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Raw ingested telemetry &middot; read-only</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -81,6 +88,8 @@ export default function DatabaseAccessFrame() {
           </table>
         </div>
       </div>
+
+      <ChangeControl />
     </div>
   )
 }

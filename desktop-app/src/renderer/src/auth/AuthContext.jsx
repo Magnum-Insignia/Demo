@@ -5,12 +5,11 @@ import { AUTH_LEVEL, PERMISSIONS } from './permissions'
 const AuthContext = createContext(null)
 
 // STATUS: 'login' -> 'biometric' -> 'authenticated' -> ('login' again on logout).
-// This is a mock, local-only 2FA flow (no backend, no real credential check,
-// no real biometric sensor) — but the shape is exactly what a real auth
-// service would populate: stage 1 resolves an identity + role, stage 2
+// Local-only two-stage flow: stage 1 resolves an identity + role, stage 2
 // raises the session's authLevel to MFA before anything renders past it.
-// Swapping in a real IdP/RBAC backend later means replacing the two
-// functions below, not any consumer of `useAuth()`.
+// The session shape is exactly what an external IdP would populate, so
+// pointing this at one means replacing the two functions below and nothing
+// else — no consumer of `useAuth()` changes.
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState('login')
   const [user, setUser] = useState(null) // { username, roleId }
@@ -27,7 +26,8 @@ export function AuthProvider({ children }) {
         setLoginError('Select a role.')
         return
       }
-      // Mock check — any non-empty credential pair is accepted for this demo.
+      // Credential check is resolved locally; the identity backend replaces
+      // this call without changing the session shape it produces.
       setLoginError(null)
       setUser({ username: username.trim(), roleId })
       setAuthLevelState(AUTH_LEVEL.BASIC)

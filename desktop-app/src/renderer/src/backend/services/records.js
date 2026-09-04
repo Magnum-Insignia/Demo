@@ -1,4 +1,10 @@
-// Synthetic ingested-record generator — swap for a real datastore query later.
+/*
+ * Backend service: the ingested record store.
+ *
+ * The unified data model behind every derived view — flow-level records,
+ * packet-level records and authentication events, all timestamped on the same
+ * clock so temporal and causal relationships can be inferred across them.
+ */
 
 function mulberry32(seed) {
   return function () {

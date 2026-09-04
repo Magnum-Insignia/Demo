@@ -1,24 +1,19 @@
 import { useState } from 'react'
 import ConfusionMatrix from './ConfusionMatrix'
 import TransitionHeatmap from './TransitionHeatmap'
+import ResidentMemory from './ResidentMemory'
+import LayerProbes from './LayerProbes'
+import backend from '../../backend'
 
 /*
  * Frame: Brain Control
- * Owns the "AI World Model" itself — status, rollout configuration and
- * retraining/resimulation triggers — as opposed to the Dashboard (which
- * shows the model's OUTPUT) or Topology (which shows the network it scores).
- * Self-contained: only reads from ../../auth if/when it needs permission
- * gating beyond the frame-level nav check the registry already applies.
+ * Owns the NAGA-Net engine itself — its status, its rollout configuration,
+ * the evaluation record it was released against, and surgical access to the
+ * memory it is currently resident on — as opposed to the Dashboard (which
+ * shows the engine's OUTPUT) or Topology (which shows the network it scores).
  */
 
-const MODEL_INFO = {
-  name: 'WorldModel-RSSM-v0.3',
-  architecture: 'Recurrent State-Space Model (GRU core) + Temporal Attention head',
-  trainedOn: 'CIC-IDS-2018 (flow + packet features)',
-  lastTrained: '2026-08-14',
-  paramCount: '4.2M',
-  status: 'loaded'
-}
+const ENGINE = backend.engine.card()
 
 export default function BrainControlFrame() {
   const [horizon, setHorizon] = useState(10)
@@ -37,19 +32,23 @@ export default function BrainControlFrame() {
         <div className="flex justify-between items-start">
           <div>
             <h2 className="font-bold text-sm text-slate-900">Brain Control</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Model status and rollout configuration for the world model.</p>
+            <p className="text-xs text-slate-500 mt-0.5">{ENGINE.name} engine host</p>
           </div>
           <span className="text-[10px] px-2 py-0.5 rounded border font-mono font-bold bg-emerald-50 border-emerald-200 text-emerald-700 uppercase">
-            {MODEL_INFO.status}
+            {ENGINE.status}
           </span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 mt-4 font-mono text-xs">
-          <Row label="Model" value={MODEL_INFO.name} />
-          <Row label="Architecture" value={MODEL_INFO.architecture} />
-          <Row label="Trained on" value={MODEL_INFO.trainedOn} />
-          <Row label="Last trained" value={MODEL_INFO.lastTrained} />
-          <Row label="Parameters" value={MODEL_INFO.paramCount} />
+          <Row label="Engine" value={`${ENGINE.name} ${ENGINE.version}`} />
+          <Row label="Architecture" value={ENGINE.architecture} />
+          <Row label="Objective" value={ENGINE.objective} />
+          <Row label="Trained on" value={ENGINE.trainedOn} />
+          <Row label="Training window" value={ENGINE.trainingWindow} />
+          <Row label="Last trained" value={ENGINE.lastTrained} />
+          <Row label="Parameters" value={ENGINE.paramCount} />
+          <Row label="Residency" value={ENGINE.residency} />
+          <Row label="Throughput" value={ENGINE.throughput} />
         </div>
       </div>
 
@@ -88,13 +87,11 @@ export default function BrainControlFrame() {
             />
           </div>
 
-          <p className="text-[10px] text-slate-400">Local to this frame for now — not yet wired to the Dashboard/Topology forecast engine.</p>
         </div>
 
         <div className="glass-panel rounded-xl p-5 h-full flex flex-col justify-center space-y-4">
           <div className="space-y-4">
             <h3 className="font-bold text-xs text-slate-900">Resimulation</h3>
-            <p className="text-[11px] text-slate-500">Re-run the K-step forward rollout from the current observed state using the configuration on the left.</p>
             <button
               onClick={triggerRetrain}
               disabled={retraining}
@@ -110,6 +107,10 @@ export default function BrainControlFrame() {
         <ConfusionMatrix />
         <TransitionHeatmap />
       </div>
+
+      <ResidentMemory />
+
+      <LayerProbes />
     </div>
   )
 }

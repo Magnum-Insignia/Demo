@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import IngestPanel from './IngestPanel'
+import LiveIngestPanel from './LiveIngestPanel'
 import PipelineStepper from './PipelineStepper'
 import ProbabilityTimeline from './ProbabilityTimeline'
 import StageGantt from './StageGantt'
@@ -11,12 +12,13 @@ const PIPELINE_STEPS = ['parsing', 'feature', 'inference', 'rendering']
 const STEP_DELAY_MS = 550
 
 /*
- * Frame: Ingest / Offline Demo
- * A self-contained "run a capture through the pipeline" flow, separate from
- * the Dashboard's always-on live telemetry — this is the offline/PCAP path
- * required for demo reliability (pre-loaded samples, so an evaluator never
- * needs to find their own capture file) and for the "no external calls"
- * requirement to be visibly, not just actually, true.
+ * Frame: Ingest
+ * The offline capture path: submit a PCAP or CSV and run it through the full
+ * pipeline — parsing, feature extraction, NAGA-Net inference, results —
+ * separate from the Dashboard's always-on live telemetry. Pre-loaded
+ * reference datasets sit alongside file upload so the path can be exercised
+ * without sourcing a capture first, and every stage runs on this host, which
+ * makes the offline guarantee visible rather than merely true.
  */
 export default function IngestDemoFrame({ onNavigate }) {
   const [sourceMode, setSourceMode] = useState('sample')
@@ -42,7 +44,7 @@ export default function IngestDemoFrame({ onNavigate }) {
 
   function onPickFile(file) {
     setSelectedSampleId(null)
-    resetForNewFile({ name: file.name, size: file.size, seed: `upload-${file.name}-${file.size}` })
+    resetForNewFile({ name: file.name, size: file.size })
   }
 
   function onRunInference() {
@@ -69,9 +71,10 @@ export default function IngestDemoFrame({ onNavigate }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-bold text-sm text-slate-900">Ingest / Offline Demo</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Run a PCAP/CSV capture through the full offline pipeline — parsing, feature extraction, model inference, and results — without any live network connection.</p>
+        <h2 className="font-bold text-sm text-slate-900">Ingest</h2>
       </div>
+
+      <LiveIngestPanel />
 
       <IngestPanel
         sourceMode={sourceMode}
@@ -90,7 +93,18 @@ export default function IngestDemoFrame({ onNavigate }) {
         <PipelineStepper stage={pipelineStage} />
       </div>
 
-      {resultsReady && run && (
+      {resultsReady && run && run.unprocessed && (
+        <div className="glass-panel rounded-xl p-5">
+          <h3 className="font-bold text-sm text-slate-900">Not extracted</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {run.filename} has not been through the extraction pipeline, so there is nothing measured to score. Run{' '}
+            <code className="font-mono text-slate-700">python -m pipeline.run extract --day &lt;file&gt;</code> and reload, or pick an
+            extracted capture above.
+          </p>
+        </div>
+      )}
+
+      {resultsReady && run && !run.unprocessed && (
         <>
           <ProbabilityTimeline run={run} />
           <StageGantt run={run} />

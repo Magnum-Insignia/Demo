@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import RequirePermission from '../../auth/RequirePermission'
 import { PERMISSIONS } from '../../auth/permissions'
 import { COMPLIANCE_FIELD_GROUPS, deriveComplianceRecord } from './complianceFields'
-import { severityForRisk } from './graphModel'
+import { severityForRisk } from './encoding'
 import { neighborEdgesOf } from './elementsBuilder'
 
 function mulberry32(seed) {

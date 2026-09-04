@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { STAGES, TRANSITION_MATRIX } from './benchmarkData'
+import backend from '../../backend'
+
+const { stages: STAGES, matrix: TRANSITION_MATRIX } = backend.engine.transitionOperator()
 
 const RAMP = ['#f2f7fb', '#e3eef6', '#c3dbeb', '#98c2dd', '#61a1cb', '#2980B9', '#236e9f', '#1e5c85', '#133b55']
 
@@ -64,7 +66,6 @@ export default function TransitionHeatmap() {
           </tbody>
         </table>
       </div>
-      <p className="text-[9.5px] text-slate-400 mt-3">Diagonal = probability the stage persists into the next observation window.</p>
     </div>
   )
 }

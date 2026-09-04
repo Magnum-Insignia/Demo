@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { generateLogs, SEVERITIES } from './logGenerator'
+import backend from '../../backend'
+
+const SEVERITIES = backend.events.severities()
 
 const SEVERITY_CLS = {
   info: 'bg-slate-100 text-slate-500 border-slate-200',
@@ -9,7 +11,7 @@ const SEVERITY_CLS = {
 }
 
 export default function LogsFrame() {
-  const logs = useMemo(() => generateLogs('session'), [])
+  const logs = useMemo(() => backend.events.list({ stream: 'session' }), [])
   const [active, setActive] = useState(new Set(SEVERITIES))
 
   function toggle(sev) {

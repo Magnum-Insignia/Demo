@@ -1,21 +1,16 @@
 /*
- * Synthetic network topology fixture — swap for a live asset/flow-inventory
- * feed later. Shape mirrors what the docx spec calls for: role-typed
- * devices grouped into subnet compound nodes, and AGGREGATED (src, dst,
- * protocol) edges rather than one edge per raw packet — each edge carries a
- * handful of representative sample flows for the click-through detail view.
+ * Backend service: network inventory.
+ *
+ * The asset/flow inventory the rest of the product reasons over — role-typed
+ * devices grouped into subnet compounds, AGGREGATED (src, dst, protocol)
+ * edges rather than one edge per raw packet (each carrying a handful of
+ * representative sample flows for click-through detail), and the kill chain
+ * NAGA-Net currently believes is in progress.
+ *
+ * Purely visual encodings (node shapes, protocol colours, risk-to-colour
+ * ramps) are NOT here — those belong to the topology frame, in
+ * frames/topology/encoding.js.
  */
-
-// Shape carries role identity (reads even in grayscale/print, per the docx
-// spec) AND every node also carries an icon glyph (deviceIcons.js) for a
-// faster-to-scan secondary cue — belt-and-suspenders identity encoding.
-export const ROLES = {
-  endpoint: { shape: 'ellipse', baseColor: '#2980B9', label: 'User / Endpoint host' },
-  router: { shape: 'round-hexagon', baseColor: '#7F8C8D', label: 'Router / Switch / Gateway' },
-  firewall: { shape: 'round-diamond', baseColor: '#D68A0C', label: 'Firewall' },
-  server: { shape: 'round-rectangle', baseColor: '#16A085', label: 'Server (internal asset)' },
-  external: { shape: 'round-hexagon', baseColor: '#B9662F', label: 'External / Internet node' }
-}
 
 export const SUBNETS = [
   { id: 'subnet-it-ops', label: '10.6.1.0/24 · IT-OPS', vlan: 'VLAN 10' },
@@ -42,16 +37,6 @@ export const INFRA = [
   { id: 'RTR', label: 'RTR-CORE', role: 'router', deviceCategory: 'Core switch/router', ip: '10.6.0.2', criticality: 'high', owner: 'Network Team', sub: '12.4k pkt/s', risk: 8, riskStart: 8 }
 ]
 
-// protocol -> visual encoding (color + dash pattern together, per docx: "never color alone")
-export const PROTOCOL_STYLE = {
-  'HTTP/HTTPS': { color: '#16A085', dash: [] },
-  'SSH/RDP': { color: '#D68A0C', dash: [], widthBump: 1 },
-  DNS: { color: '#95A5A6', dash: [1, 3] },
-  TCP: { color: '#BFB9AC', dash: [] },
-  UDP: { color: '#219653', dash: [6, 4] }
-}
-export const FLAGGED_STYLE = { color: '#C0392B', dash: [4, 3] }
-
 export const EDGES = [
   { id: 'e-ext-fw', source: 'EXT1', target: 'FW', protocol: 'TCP', linkMedium: 'wired', bytes: 48210, packets: 612, durationMs: 41200, flagged: true, severity: 'elevated', contribution: 0.31, mitreStage: 'Reconnaissance (TA0043)', recency: 0.9, consecutiveFlagged: 2, tcpFlags: ['SYN'], iat: { mean: 12, variance: 4.2, max: 55 }, retransmissions: 3, ttlVariance: 0.61,
     sampleFlows: [
@@ -77,7 +62,7 @@ export const EDGES = [
   { id: 'e-db-pcemiko', source: 'DB', target: 'PCEMIKO', protocol: 'HTTP/HTTPS', linkMedium: 'wired', bytes: 210_000, packets: 1400, flagged: false, recency: 0.4, tcpFlags: ['SYN', 'ACK', 'FIN'], iat: { mean: 22, variance: 6, max: 50 }, retransmissions: 0, ttlVariance: 0.07 }
 ]
 
-// The world model's current best-guess kill chain: the ordered hop sequence
+// NAGA-Net's current best-estimate kill chain: the ordered hop sequence
 // from the external entry point to the deepest asset it has reached so far.
 // Rendered as a distinct bold/animated overlay on top of the normal edge
 // styling, plus a step-sequence summary panel — see AttackVectorPanel.jsx.
@@ -100,19 +85,3 @@ export function attackVectorEdgeIds() {
   return ids
 }
 
-export function riskAt(device, t) {
-  return device.riskStart + (device.risk - device.riskStart) * (t / 10)
-}
-
-export function severityForRisk(r) {
-  if (r >= 70) return 'high'
-  if (r >= 40) return 'elevated'
-  return 'nominal'
-}
-
-export function riskFillColor(r) {
-  // gray/base -> amber -> red, per the docx's "risk as a secondary color cue" spec
-  if (r >= 70) return '#C0392B'
-  if (r >= 40) return '#D68A0C'
-  return null // null = keep the role's base identity color
-}

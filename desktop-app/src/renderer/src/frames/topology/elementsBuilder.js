@@ -1,7 +1,11 @@
-import { DEVICES, INFRA, SUBNETS, EDGES, ROLES, PROTOCOL_STYLE, FLAGGED_STYLE, ATTACK_VECTOR, riskAt, riskFillColor, attackVectorEdgeIds } from './graphModel'
+import backend from '../../backend'
+import { ROLES, PROTOCOL_STYLE, FLAGGED_STYLE, riskAt, riskFillColor } from './encoding'
 import { iconDataUri } from './deviceIcons'
 
-const ATTACK_EDGE_IDS = new Set(attackVectorEdgeIds())
+const { subnets: SUBNETS, devices: DEVICES, infra: INFRA, edges: EDGES } = backend.topology.graph()
+const ATTACK_VECTOR = backend.topology.attackVector()
+
+const ATTACK_EDGE_IDS = new Set(backend.topology.attackVectorEdgeIds())
 const ATTACK_NODE_STEP = new Map(ATTACK_VECTOR.map((h, i) => [h.node, i + 1]))
 
 // Fixed hub-and-spoke coordinates (per docs/design-assets): external ingress
@@ -31,7 +35,7 @@ function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v))
 }
 
-const ALL_DEVICES = [...DEVICES, ...INFRA]
+export const ALL_DEVICES = [...DEVICES, ...INFRA]
 
 function degreeOf(id) {
   return EDGES.filter((e) => e.source === id || e.target === id).length

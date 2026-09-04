@@ -1,9 +1,9 @@
 // Auto-generated attack narrative — turns the topology frame's inferred
 // kill chain (ATTACK_VECTOR) into a timestamped prose story instead of raw
-// numbers. Reads topology's graphModel as read-only ground truth so the two
+// numbers. Reads the backend's topology inventory as read-only ground truth so the two
 // frames always tell the same story (a deliberate, narrow exception to
 // "frames don't import each other" — this is shared fact, not shared UI).
-import { ATTACK_VECTOR, EDGES, attackVectorEdgeIds } from '../topology/graphModel'
+import backend from '../../backend'
 import { findDevice } from '../topology/elementsBuilder'
 
 const HOP_VERBS = [
@@ -20,7 +20,9 @@ function fmtTime(d) {
 
 export function generateNarrative() {
   const now = new Date()
-  const edgeIds = attackVectorEdgeIds()
+  const ATTACK_VECTOR = backend.topology.attackVector()
+  const EDGES = backend.topology.graph().edges
+  const edgeIds = backend.topology.attackVectorEdgeIds()
   const hopCount = ATTACK_VECTOR.length
   // Spread hops across the last ~45 minutes, most recent hop closest to now.
   const spanMs = 45 * 60 * 1000

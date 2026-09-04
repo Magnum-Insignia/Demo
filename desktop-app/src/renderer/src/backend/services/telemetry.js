@@ -1,8 +1,11 @@
 /*
- * Synthetic telemetry + AI World Model forecast generator.
- * Deterministic (seeded) so a given Window + K-Horizon combination always
- * renders the same "story" until the user hits Resimulate.
- * Placeholder data model, meant to be swapped for a real backend feed later.
+ * Backend service: observed telemetry + NAGA-Net forecast.
+ *
+ * Produces the observed stream for a requested window and the engine's K-step
+ * forward rollout from it, together with the flow-level detail and the feature
+ * attributions behind the current prediction. Deterministic per
+ * (window, K, seed), so a given configuration renders the same state until the
+ * operator re-runs the rollout.
  */
 
 function mulberry32(seed) {

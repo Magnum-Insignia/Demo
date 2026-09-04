@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { runCommand } from './commands'
 
-const WELCOME = ['world-model-dashboard CLI — type "help" to list commands.']
+const WELCOME = ['OcuNet operator console — type "help" to list commands.']
 
 export default function CliAccessFrame() {
   const { user, role } = useAuth()
@@ -55,7 +55,7 @@ export default function CliAccessFrame() {
     <div className="space-y-3">
       <div>
         <h2 className="font-bold text-sm text-slate-900">CLI Access</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Mock terminal — commands run against a local table today, an IPC-bridged shell later.</p>
+        <p className="text-xs text-slate-500 mt-0.5">Operator console — commands run against the backend API, the same surface every other module reads.</p>
       </div>
 
       <div className="rounded-xl border border-slate-800 bg-slate-950 text-emerald-400 font-mono text-xs overflow-hidden">

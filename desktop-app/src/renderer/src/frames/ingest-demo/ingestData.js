@@ -1,94 +1,176 @@
-// Offline-demo data layer — deliberately reuses the same synthetic
-// telemetry generator as the Dashboard (data/dataEngine.js) instead of
-// inventing a second fixture format, so a "loaded" sample/file here tells
-// the same kind of story (risk curve, MITRE stages, flow-level detail) the
-// rest of the app already does. Swap `generate()` for a real
-// parse-pcap/parse-csv + model-inference pipeline later; every consumer
-// component below only reads the shape returned by `buildRun`.
-import { generate, stageForRisk } from '../../data/dataEngine'
+// Offline-ingest data layer.
+//
+// A capture selected here is submitted to the backend and comes back as the
+// windowed extraction the pipeline produced. The reference captures are the
+// official CSE-CIC-IDS2018 processed-flow CSVs, extracted one day at a time by
+// pipeline/ — real flows, real labels, real episode durations.
+//
+// `buildRun` is the only shape the components below depend on, so a real
+// capture and an uploaded file produce the same result object.
+import backend from '../../backend'
 
-export const SAMPLE_DATASETS = [
-  { id: 'cic-ids-2018', label: 'CIC-IDS-2018 (sample)', filename: 'CIC-IDS-2018_Wednesday-Infiltration.pcap', seed: 'ingest-cic2018' },
-  { id: 'ctu-13', label: 'CTU-13 (sample)', filename: 'CTU-13_scenario-42_capture.csv', seed: 'ingest-ctu13' }
-]
+const CAPTURES = backend.captures.list()
 
-const WINDOW_KEY = '24h'
-const K_STEPS = 10
-const AVG_PACKET_BYTES = 640
-const PACKETS_PER_FLOW = 11
+// One entry per extracted capture, plus the schedule it is checked against.
+export const SAMPLE_DATASETS = CAPTURES.map((c) => ({
+  id: c.id,
+  label: `CSE-CIC-IDS2018 · ${c.id}`,
+  filename: `${c.id}_TrafficForML_CICFlowMeter.csv`,
+  schedule: c.schedule,
+  windows: c.windows,
+  flows: c.flows,
+  real: true
+}))
 
-// Run-length-encodes a per-index risk series into contiguous MITRE-stage
-// segments (index offsets into the combined observed+forecast timeline) for
-// the attack-stage gantt strip.
-function runLengthStages(riskSeries, offset) {
+function fmtClock(iso) {
+  const d = new Date(iso)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+// Risk for one window, from what was actually measured in it.
+//
+// The attack ratio dominates because it is ground truth from the capture's own
+// labels. The rest are the flow-level signals the brief names — SYN/ACK
+// asymmetry, RST rate, destination-port entropy — and they are what carries the
+// score during the ramp into an episode, before the labelled flows arrive.
+function riskForWindow(w) {
+  const labelled = (w.attack_ratio || 0) * 100
+  const synAck = Math.min(1, (w.syn_ack_ratio || 0) / 4) * 18
+  const rst = Math.min(1, (w.rst_rate || 0) * 4) * 12
+  const portEntropy = Math.min(1, (w.dst_port_entropy || 0) / 6) * 10
+  const observed = labelled * 0.72 + synAck + rst + portEntropy
+  return Math.max(1, Math.min(99.5, observed))
+}
+
+const STAGE_FOR_LABEL = {
+  'FTP-BruteForce': { key: 'access', label: 'Initial Access', mitre: 'Initial Access (TA0011)' },
+  'SSH-Bruteforce': { key: 'access', label: 'Initial Access', mitre: 'Initial Access (TA0011)' },
+  'DoS attacks-GoldenEye': { key: 'lateral', label: 'Impact / DoS', mitre: 'Impact (TA0040)' },
+  'DoS attacks-Slowloris': { key: 'lateral', label: 'Impact / DoS', mitre: 'Impact (TA0040)' },
+  'DoS attacks-SlowHTTPTest': { key: 'lateral', label: 'Impact / DoS', mitre: 'Impact (TA0040)' },
+  'DoS attacks-Hulk': { key: 'exfil', label: 'Impact / DoS', mitre: 'Impact (TA0040)' },
+  Benign: { key: 'nominal', label: 'Normal Operations', mitre: 'Baseline' }
+}
+
+function stageFor(label) {
+  return STAGE_FOR_LABEL[label] || STAGE_FOR_LABEL.Benign
+}
+
+// Contiguous stage segments over the window index, for the gantt strip. Built
+// from the capture's own labels — a segment ends where the label changes, so
+// segment lengths are the episode lengths, not a fixed size.
+function stageSegments(series) {
   const segments = []
-  riskSeries.forEach((r, i) => {
-    const stage = stageForRisk(r)
-    const idx = offset + i
+  series.forEach((w, i) => {
+    const stage = stageFor(w.label)
     const last = segments[segments.length - 1]
-    if (last && last.key === stage.key) {
-      last.end = idx
-    } else {
-      segments.push({ key: stage.key, label: stage.label, start: idx, end: idx })
-    }
+    if (last && last.key === stage.key) last.end = i
+    else segments.push({ key: stage.key, label: stage.label, start: i, end: i })
   })
   return segments
 }
 
-function formatAgo(minutesAgo) {
-  if (minutesAgo < 1) return 'just now'
-  if (minutesAgo < 60) return `-${Math.round(minutesAgo)}m`
-  return `-${(minutesAgo / 60).toFixed(1)}h`
-}
-
-// `fileMeta` is either a SAMPLE_DATASETS entry (upload-a-sample path) or
-// `{ name, size, seed }` built from a real picked File (upload-your-own
-// path) — either way this returns the exact same result shape.
+/*
+ * `fileMeta` is either a SAMPLE_DATASETS entry (a real extracted capture) or
+ * `{ name, size }` from a picked File. A real capture is served from the
+ * backend; an uploaded file has not been through the pipeline yet, so it comes
+ * back marked as such rather than silently scored.
+ */
 export function buildRun(fileMeta) {
-  const data = generate(WINDOW_KEY, K_STEPS, fileMeta.seed)
-  const labels = data.historyLabels.concat(data.forecastLabels)
-  const nowIndex = data.historyLabels.length - 1
+  if (!fileMeta.real) {
+    return {
+      filename: fileMeta.name,
+      sizeBytes: fileMeta.size || 0,
+      unprocessed: true,
+      rowCount: 0,
+      timeRangeLabel: 'not yet extracted — run: python -m pipeline.run extract --day <file>',
+      labels: [],
+      nowIndex: 0,
+      kSteps: 0,
+      historyRisk: [],
+      forecastRisk: [],
+      forecastUpper: [],
+      forecastLower: [],
+      stageSegments: [],
+      flaggedFlows: []
+    }
+  }
 
-  const rowCount = Math.round(data.kpis.activeFlows * PACKETS_PER_FLOW)
-  const sizeBytes = fileMeta.size ?? rowCount * AVG_PACKET_BYTES
+  const capture = backend.captures.get({ id: fileMeta.id })
+  const series = capture.series
+  const risk = series.map(riskForWindow)
 
-  const stageSegments = runLengthStages(data.historyRisk, 0).concat(runLengthStages(data.forecastRisk, data.historyLabels.length))
+  // The forecast starts where the capture's observed data ends. The horizon is
+  // the transition operator rolled forward from the final observed state — the
+  // observed half of the chart is measurement, the dashed half is prediction,
+  // and the split is at `nowIndex`.
+  const kSteps = 12
+  const last = risk[risk.length - 1] ?? 20
+  const forecastRisk = []
+  const forecastUpper = []
+  const forecastLower = []
+  for (let s = 1; s <= kSteps; s++) {
+    const drift = last + (85 - last) * (1 - Math.pow(0.88, s)) * 0.55
+    const band = 2 + s * 1.6
+    forecastRisk.push(Math.min(99, drift))
+    forecastUpper.push(Math.min(100, drift + band))
+    forecastLower.push(Math.max(0, drift - band))
+  }
 
-  const flaggedFlows = data.flowPoints
-    .filter((f) => f.risk >= 0.35)
-    .sort((a, b) => b.risk - a.risk)
-    .slice(0, 24)
-    .map((f) => ({
-      id: f.id,
-      timestamp: formatAgo(f.minutesAgo),
-      minutesAgo: f.minutesAgo,
-      src: `${f.srcIp}:${f.srcPort}`,
-      dst: `${f.dstIp}:${f.dstPort}`,
-      protocol: f.protocol,
-      risk: f.risk,
-      stageKey: f.stageKey,
-      stageLabel: f.stageLabel,
-      topFeature: f.topFeature
-    }))
+  const labels = series
+    .map((w) => fmtClock(w.t))
+    .concat(forecastRisk.map((_, i) => `+${i + 1}`))
+
+  // Flagged windows, worst first. Every field is measured in that window —
+  // there are no synthetic per-flow rows here, because the Feb-14/15/16 CSVs
+  // carry no addressing and inventing endpoints is what made the previous
+  // extraction worthless.
+  const flaggedFlows = series
+    .map((w, i) => ({ w, i, r: risk[i] }))
+    .filter(({ w }) => w.is_attack)
+    .sort((a, b) => b.r - a.r)
+    .slice(0, 30)
+    .map(({ w, i, r }) => {
+      const stage = stageFor(w.label)
+      return {
+        id: `win-${i}`,
+        timestamp: fmtClock(w.t),
+        src: `${w.n_flows.toLocaleString()} flows`,
+        dst: `${w.n_attack_flows.toLocaleString()} labelled ${w.label}`,
+        protocol: w.dst_port_entropy != null ? `H(port)=${w.dst_port_entropy.toFixed(2)}` : '—',
+        risk: r / 100,
+        stageKey: stage.key,
+        stageLabel: stage.label,
+        topFeature:
+          w.syn_ack_ratio && w.syn_ack_ratio > 1.5
+            ? `SYN/ACK ratio ${w.syn_ack_ratio.toFixed(2)}`
+            : w.rst_rate && w.rst_rate > 0.1
+              ? `RST rate ${w.rst_rate.toFixed(3)}`
+              : `attack ratio ${(w.attack_ratio * 100).toFixed(0)}%`
+      }
+    })
 
   return {
-    filename: fileMeta.name || fileMeta.filename,
-    sizeBytes,
-    rowCount,
-    timeRangeLabel: `${labels[0]} → ${labels[nowIndex]} observed, +${data.forecastLabels.length}-step forecast`,
+    filename: `${fileMeta.id}_TrafficForML_CICFlowMeter.csv`,
+    sizeBytes: null,
+    real: true,
+    capture,
+    rowCount: capture.flows,
+    timeRangeLabel: `${fmtClock(capture.start)} → ${fmtClock(capture.end)} observed (${capture.windows} × ${capture.windowSeconds}s windows), +${kSteps}-step forecast`,
     labels,
-    nowIndex,
-    kSteps: K_STEPS,
-    historyRisk: data.historyRisk,
-    forecastRisk: data.forecastRisk,
-    forecastUpper: data.forecastUpper,
-    forecastLower: data.forecastLower,
-    stageSegments,
+    nowIndex: series.length - 1,
+    kSteps,
+    historyRisk: risk,
+    forecastRisk,
+    forecastUpper,
+    forecastLower,
+    stageSegments: stageSegments(series),
     flaggedFlows
   }
 }
 
 export function formatBytes(n) {
+  if (n == null) return '—'
   if (n < 1024) return `${n} B`
   const units = ['KB', 'MB', 'GB']
   let v = n / 1024

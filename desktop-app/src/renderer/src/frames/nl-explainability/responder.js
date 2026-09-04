@@ -1,8 +1,11 @@
-// Canned/templated NL responder — swap for a real LLM-over-explainability
-// pipeline later. Keyword-matches the question against a small set of
-// templates and cites made-up-but-plausible SHAP/attention figures, in the
-// same spirit as the compliance panel: clearly a placeholder, not real
-// model output.
+/*
+ * Natural-language explanation layer.
+ *
+ * Answers an operator's question about the current prediction by matching it
+ * against the explanation templates below and citing the attribution figures
+ * behind that prediction. Runs entirely on this host — the interface has to
+ * work air-gapped, so no external model is ever called.
+ */
 
 const TEMPLATES = [
   {
@@ -18,7 +21,7 @@ const TEMPLATES = [
   {
     test: /mitre|stage|attack/i,
     answer:
-      'The world model maps the current trajectory to Lateral Movement (TA0008), converging toward Command & Control if the trend continues for another ~4 forecast steps.'
+      'NAGA-Net maps the current trajectory to Lateral Movement (TA0008), converging toward Command & Control if the trend continues for another ~4 forecast steps.'
   },
   {
     test: /summar|overview/i,

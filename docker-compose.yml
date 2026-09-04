@@ -1,11 +1,31 @@
 services:
+  # The backend host: ingestion pipeline, datastore and the resident NAGA-Net
+  # engine, plus the locally hosted web build served from the same origin.
+  # This is the container that runs on the monitoring node in the demo.
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ocunet-backend
+    environment:
+      HOST: 0.0.0.0
+      PORT: '8787'
+    ports:
+      - '8787:8787'
+    restart: unless-stopped
+
+  # Containerized renderer dev server, for working on the interface without a
+  # local Node toolchain. The Electron shell still runs natively on the host (a
+  # GUI window cannot run headless in a Linux container) and points its
+  # BrowserWindow at this — see package.json's "dev:container" script.
   frontend-dev:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: world-model-frontend-dev
+    container_name: ocunet-frontend-dev
     ports:
-      - "5173:5173"
+      - '5173:5173'
     volumes:
       - ./desktop-app/src:/app/src
     restart: unless-stopped
+    profiles: ['dev']

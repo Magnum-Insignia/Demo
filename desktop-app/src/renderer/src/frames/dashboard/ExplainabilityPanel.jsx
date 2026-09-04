@@ -6,12 +6,7 @@ export default function ExplainabilityPanel({ data }) {
     <div className="glass-panel rounded-xl p-5 h-full flex flex-col justify-center">
       <div>
         <h3 className="font-bold text-sm text-slate-900">Why This Prediction</h3>
-        <p className="text-xs text-slate-500 mt-0.5 mb-4">Top contributing features behind the current risk score &middot; SHAP-style attribution</p>
-
-        <p className="text-[11px] text-slate-600 leading-relaxed mb-4">
-          Driven primarily by <b className="text-slate-900">{top.name.toLowerCase()}</b>, consistent with{' '}
-          <b className="text-slate-900">{stage.label.toLowerCase()}</b> behavior ({stage.mitre}).
-        </p>
+        <p className="text-xs text-slate-500 mt-0.5 mb-4">SHAP-style attribution</p>
 
         <div className="space-y-2.5">
           {data.topFeatures.map((f) => (

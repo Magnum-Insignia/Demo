@@ -1,4 +1,6 @@
-import { ATTACK_VECTOR } from './graphModel'
+import backend from '../../backend'
+
+const ATTACK_VECTOR = backend.topology.attackVector()
 import { findDevice } from './elementsBuilder'
 
 export default function AttackVectorPanel() {
@@ -8,7 +10,7 @@ export default function AttackVectorPanel() {
         <h4 className="font-bold text-sm text-slate-900">Attack Vector</h4>
         <span className="text-[9.5px] px-2 py-0.5 rounded border font-mono font-bold bg-red-50 border-red-200 text-red-700">INFERRED KILL CHAIN</span>
       </div>
-      <p className="text-[11px] text-slate-500 mb-4">The world model's current best guess at the intrusion route, traced hop by hop.</p>
+      <p className="text-[11px] text-slate-500 mb-4">NAGA-Net's current best estimate of the intrusion route, traced hop by hop.</p>
 
       <div className="flex items-start">
         {ATTACK_VECTOR.map((hop, i) => {

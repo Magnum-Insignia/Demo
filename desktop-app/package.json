@@ -1,7 +1,7 @@
 {
-  "name": "world-model-dashboard",
+  "name": "ocunet",
   "version": "1.0.0",
-  "description": "OcuNet - Predictive Cyber Defense Dashboard",
+  "description": "OcuNet — predictive cyber defense monitoring, powered by the NAGA-Net engine",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -10,7 +10,13 @@
     "docker:down": "docker compose -f ../docker-compose.yml down",
     "start": "electron-vite preview",
     "build": "electron-vite build",
-    "dist": "electron-vite build && electron-builder"
+    "dist": "electron-vite build && electron-builder",
+    "backend": "node ../backend/server.js",
+    "build:web": "vite build src/renderer --config src/renderer/vite.config.js --outDir ../../out/web --emptyOutDir",
+    "web": "npm run build:web && node ../backend/server.js",
+    "e2e": "node e2e.mjs",
+    "e2e:offline": "node e2e-offline.mjs",
+    "e2e:desktop": "node e2e-desktop.mjs"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.2.0",

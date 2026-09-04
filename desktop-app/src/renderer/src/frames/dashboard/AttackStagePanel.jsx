@@ -1,4 +1,6 @@
-import { STAGES } from '../../data/dataEngine'
+import backend from '../../backend'
+
+const STAGES = backend.telemetry.stages()
 
 export default function AttackStagePanel({ data }) {
   const stage = data.stageNow

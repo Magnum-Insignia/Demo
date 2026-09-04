@@ -95,10 +95,44 @@ export function NlIcon(props) {
   )
 }
 
+export function SimulationIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 18c3.5 0 4.5-11 8-11s4.5 7 8 7" />
+      <path d="M3 18c3.5 0 5-6 8-6s4 3 8 3" opacity="0.55" />
+      <path d="M3 18c3.5 0 5.5-2 8-2s4.5-.5 8-.5" opacity="0.35" />
+      <circle cx="3" cy="18" r="1.6" />
+    </svg>
+  )
+}
+
+export function AlertsIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M18 9a6 6 0 10-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9z" />
+      <path d="M10.4 19a2 2 0 003.2 0" />
+    </svg>
+  )
+}
+
+export function ActionPlanIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="3.5" width="16" height="17" rx="1.6" />
+      <path d="M8 8.5l1.6 1.6L12.5 7" />
+      <path d="M8 14.5l1.6 1.6L12.5 13" />
+      <path d="M15 9h2M15 15h2" />
+    </svg>
+  )
+}
+
 export const FRAME_ICONS = {
   dashboard: DashboardIcon,
   topology: TopologyIcon,
   'brain-control': BrainIcon,
+  simulation: SimulationIcon,
+  alerts: AlertsIcon,
+  'action-plan': ActionPlanIcon,
   'ingest-demo': IngestIcon,
   'database-access': DatabaseIcon,
   logs: LogsIcon,
