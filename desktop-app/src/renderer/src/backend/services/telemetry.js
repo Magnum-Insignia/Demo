@@ -19,24 +19,44 @@ import { TRANSITION_MATRIX, STAGE_RISK } from './model.js'
 // Roll the learned operator forward from `startRisk` for K steps.
 // Returns { risk:[K], band:[K] } — expected risk per step and a spread that
 // widens with horizon (forecast uncertainty grows the further out you look).
-function rollOperator(startRisk, kSteps, ceiling) {
+//
+// Two things keep the forecast CONTINUOUS at NOW (no jump off the observed
+// line):
+//  - Soft seed: the stage distribution is built so its expected risk equals
+//    startRisk exactly (interpolated between the two bracketing stages), rather
+//    than snapping to the nearest stage's canonical risk.
+//  - Fractional step: the transition matrix was estimated on 60-second windows,
+//    but a forecast step here is `stepSeconds` long. Applying a full minute-
+//    transition every 8s would revert ~7x too fast and drop off the observed
+//    value. Each step advances the distribution only stepSeconds/60 of the way
+//    toward one full transition, so the curve leaves NOW at the observed risk
+//    and evolves at the pace the data actually moves.
+function rollOperator(startRisk, kSteps, ceiling, stepSeconds = 60) {
   const n = STAGE_RISK.length
-  // seed the stage distribution at the stage nearest the current risk
-  let start = 0
-  for (let i = 1; i < n; i++) {
-    if (Math.abs(STAGE_RISK[i] - startRisk) < Math.abs(STAGE_RISK[start] - startRisk)) start = i
+  // soft seed so E[risk] == startRisk
+  const dist = new Array(n).fill(0)
+  let hi = 0
+  while (hi < n - 1 && STAGE_RISK[hi] < startRisk) hi++
+  const lo = Math.max(0, hi - 1)
+  if (hi === lo) dist[hi] = 1
+  else {
+    const w = (startRisk - STAGE_RISK[lo]) / (STAGE_RISK[hi] - STAGE_RISK[lo])
+    dist[lo] = 1 - w
+    dist[hi] = w
   }
-  let dist = STAGE_RISK.map((_, i) => (i === start ? 1 : 0))
+  const alpha = Math.max(0.05, Math.min(stepSeconds / 60, 1))
+  let cur = dist
   const risk = []
   const band = []
   for (let s = 1; s <= kSteps; s++) {
-    const next = new Array(n).fill(0)
+    const full = new Array(n).fill(0)
     for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) next[j] += dist[i] * TRANSITION_MATRIX[i][j]
+      for (let j = 0; j < n; j++) full[j] += cur[i] * TRANSITION_MATRIX[i][j]
     }
-    dist = next
-    const mean = dist.reduce((a, p, i) => a + p * STAGE_RISK[i], 0)
-    const variance = dist.reduce((a, p, i) => a + p * (STAGE_RISK[i] - mean) ** 2, 0)
+    // advance only a fraction of one full transition per step
+    cur = cur.map((p, j) => p + alpha * (full[j] - p))
+    const mean = cur.reduce((a, p, i) => a + p * STAGE_RISK[i], 0)
+    const variance = cur.reduce((a, p, i) => a + p * (STAGE_RISK[i] - mean) ** 2, 0)
     risk.push(Math.min(mean, ceiling))
     band.push(Math.min(Math.sqrt(variance) + s * 0.6, 40))
   }
@@ -375,7 +395,7 @@ export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
   // forward projection: the LEARNED transition operator rolled forward from the
   // live current risk (never above the 85% ceiling)
   const ceiling = 85
-  const op = rollOperator(riskNow, kSteps, ceiling)
+  const op = rollOperator(riskNow, kSteps, ceiling, windowSeconds)
   const forecastLabels = []
   const forecastRisk = []
   const forecastUpper = []
