@@ -8,7 +8,6 @@ export default function BasinPanel({ run }) {
     <div className="glass-panel rounded-xl p-5 h-full flex flex-col space-y-4">
       <div>
         <h3 className="font-bold text-sm text-slate-900">Convergence Basins</h3>
-        <p className="text-xs text-slate-500 mt-0.5">Terminal stage of each trajectory at step {run.kSteps}.</p>
       </div>
 
       <div className="space-y-2.5">

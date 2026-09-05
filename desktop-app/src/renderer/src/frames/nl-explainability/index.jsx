@@ -26,7 +26,6 @@ export default function NlExplainabilityFrame() {
     <div className="space-y-6">
       <div>
         <h1 className="font-bold text-sm text-slate-900">Natural Language Explainability</h1>
-        <p className="text-xs text-slate-500 mt-0.5">Plain-language explanations of what the model is seeing — a narrative first, then ask it anything directly.</p>
       </div>
 
       <NarrativeCard />

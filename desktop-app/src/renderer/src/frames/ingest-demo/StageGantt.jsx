@@ -16,7 +16,6 @@ export default function StageGantt({ run }) {
     <div className="glass-panel rounded-xl p-5 space-y-3">
       <div>
         <h3 className="font-bold text-sm text-slate-900">Attack Stage Annotations</h3>
-        <p className="text-xs text-slate-500">MITRE ATT&amp;CK stage classified per window, aligned to the timeline above</p>
       </div>
 
       <div className="ml-8 relative">

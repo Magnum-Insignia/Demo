@@ -55,7 +55,6 @@ export default function CliAccessFrame() {
     <div className="space-y-3">
       <div>
         <h2 className="font-bold text-sm text-slate-900">CLI Access</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Operator console — commands run against the backend API, the same surface every other module reads.</p>
       </div>
 
       <div className="rounded-xl border border-slate-800 bg-slate-950 text-emerald-400 font-mono text-xs overflow-hidden">

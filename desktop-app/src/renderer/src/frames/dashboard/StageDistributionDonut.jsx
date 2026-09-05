@@ -46,7 +46,6 @@ export default function StageDistributionDonut({ data, panelId }) {
     <div id={panelId} className="glass-panel p-5 rounded-xl h-full flex flex-col">
       <div>
         <h3 className="font-bold text-sm text-slate-900">Attack Stage Distribution</h3>
-        <p className="text-xs text-slate-500">Share of the observed window spent in each MITRE stage</p>
       </div>
       <div className="flex-1 flex items-center justify-center py-2">
         <div className="w-full h-56">

@@ -3,7 +3,7 @@ import { PERMISSIONS, permissionIds } from './permissions'
 /*
  * Role catalogue.
  *
- * Two roles are shipped — SOC Analyst and SOC Director — and they hold
+ * Two roles are shipped — SOC Analyst and SOC Administrator — and they hold
  * genuinely different authority: the analyst does the day-to-day work
  * (observe, triage, propose), the director holds the authority that changes
  * the system's own behaviour or its record of the truth (tune the alarm
@@ -59,7 +59,7 @@ const DIRECTOR_AUTHORITY = [
 export const ROLES = {
   soc_director: {
     id: 'soc_director',
-    label: 'SOC Director',
+    label: 'SOC Administrator',
     description: 'Full oversight, plus the authority to tune alarm policy, authorise actions, edit engine memory and approve record amendments.',
     permissions: [...OBSERVER_BASE, ...DIRECTOR_AUTHORITY]
   },

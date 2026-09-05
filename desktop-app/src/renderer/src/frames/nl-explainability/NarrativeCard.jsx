@@ -10,7 +10,6 @@ export default function NarrativeCard() {
       <div className="flex justify-between items-start mb-1">
         <div>
           <h2 className="font-bold text-sm text-slate-900">Auto-Generated Attack Narrative</h2>
-          <p className="text-xs text-slate-500 mt-0.5">The inferred kill chain, told as a story instead of a table of numbers.</p>
         </div>
         <button
           onClick={() => setRefreshKey((k) => k + 1)}

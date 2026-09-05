@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext'
 import { ROLES } from './roles'
 
 const ROLE_CARDS = [
-  { id: 'soc_director', title: 'SOC Director', desc: 'Oversight, alarm policy, action authorisation and record approval.', icon: 'D' },
+  { id: 'soc_director', title: 'SOC Administrator', desc: 'Oversight, alarm policy, action authorisation and record approval.', icon: 'D' },
   { id: 'soc_analyst', title: 'SOC Analyst', desc: 'Day-to-day telemetry, triage and investigation.', icon: 'A' }
 ]
 
