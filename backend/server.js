@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url'
 
 import { OPERATIONS, MUTATIONS, invoke } from '../desktop-app/src/renderer/src/backend/operations.js'
 import { ENGINE } from '../desktop-app/src/renderer/src/backend/services/model.js'
-import { capture as liveCapture, probe as liveProbe } from './live_capture.js'
+import { capture as liveCapture, probe as liveProbe, topology as liveTopology } from './live_capture.js'
 import { generate as genTraffic, stop as stopTraffic, status as trafficStatus, probe as trafficProbe } from './traffic.js'
 import { start as startMonitor, getHistory as monitorHistory } from './monitor.js'
 
@@ -51,6 +51,7 @@ const MIME = {
 const started = Date.now()
 let requestCount = 0
 const streams = new Set()
+let topoCache = null // { at, data } — short cache for /cluster/topology
 
 function log(...args) {
   process.stdout.write(`[orbisnet-backend] ${args.join(' ')}\n`)
@@ -154,6 +155,16 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       return json(res, 400, { error: String(err.message || err) })
     }
+  }
+
+  // Live network topology from the cluster (real pods + observed edges).
+  // Cached briefly so rapid polls don't each fire a tcpdump.
+  if (pathname === '/cluster/topology' && req.method === 'GET') {
+    const now = Date.now()
+    if (!topoCache || now - topoCache.at > 8000) {
+      topoCache = { at: now, data: await liveTopology({ seconds: 6 }).catch((e) => ({ available: false, reason: String(e) })) }
+    }
+    return json(res, 200, { result: topoCache.data })
   }
 
   // Traffic generation control: launch/stop the distributed attack on the

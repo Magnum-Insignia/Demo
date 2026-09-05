@@ -97,6 +97,12 @@ export async function runLiveCapture({ seconds = 8, limit = 4000 } = {}) {
 export function trafficCapability() {
   return trafficCap
 }
+export async function clusterTopology() {
+  if (!connected) throw new Error('offline — topology needs the backend host')
+  const res = await fetch(host + '/cluster/topology').then((r) => r.json())
+  return res.result
+}
+
 export async function trafficStatus() {
   if (!connected) throw new Error('offline — traffic control needs the backend host')
   const res = await fetch(host + '/traffic/status').then((r) => r.json())

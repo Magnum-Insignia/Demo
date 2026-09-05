@@ -27,7 +27,7 @@
  */
 import {
   resource, observe, connect, onRevision, backendStatus,
-  runLiveCapture, liveCaptureCapability, trafficStatus, monitorHistory
+  runLiveCapture, liveCaptureCapability, trafficStatus, monitorHistory, clusterTopology
 } from './transport'
 import { OPERATIONS } from './operations'
 
@@ -46,7 +46,7 @@ backend.liveCapture = {
 // cluster. The only cluster read exposed here is a read-only pod-count status,
 // so the capture panel can show whether the network is quiet or busy — it
 // never controls the attack.
-backend.cluster = { status: trafficStatus }
+backend.cluster = { status: trafficStatus, topology: clusterTopology }
 
 // The continuous monitor's live time series — the source of truth for the live
 // graphs. Server-side, so every frame reads the same recording.

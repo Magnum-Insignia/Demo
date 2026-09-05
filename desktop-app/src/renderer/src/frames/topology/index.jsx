@@ -9,6 +9,7 @@ import backend from '../../backend'
 import DevicePropertiesPanel from './DevicePropertiesPanel'
 import EdgePropertiesPanel from './EdgePropertiesPanel'
 import AttackVectorPanel from './AttackVectorPanel'
+import LiveTopology from './LiveTopology'
 import Legend from './Legend'
 import { useTheme } from '../../theme/ThemeContext'
 
@@ -266,9 +267,14 @@ function TopologyGraph() {
 }
 
 export default function TopologyFrame() {
+  // Prefer the REAL cluster topology when the backend can reach it; fall back to
+  // the reference network only when there is no live cluster (air-gapped, or the
+  // host is down), so the page shows something rather than nothing.
+  const [live, setLive] = useState(backend.liveCapture.capability().available)
+
   return (
     <RequirePermission permission={PERMISSIONS.TOPOLOGY_VIEW}>
-      <TopologyGraph />
+      {live ? <LiveTopology onUnavailable={() => setLive(false)} /> : <TopologyGraph />}
     </RequirePermission>
   )
 }

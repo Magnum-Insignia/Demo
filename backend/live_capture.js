@@ -234,6 +234,83 @@ function evaluateRealistic(rows, malSet, target) {
     f1: +f1.toFixed(3), threshold: THRESHOLD }
 }
 
+/* Live pod inventory: ip -> { role, host } for every pod in the namespace. */
+async function inventory() {
+  const r = await run('kubectl', ['-n', 'netsim', 'get', 'pods', '-o',
+    'jsonpath={range .items[*]}{.status.podIP}{"|"}{.metadata.labels.role}{"|"}{.spec.nodeName}{"\\n"}{end}'],
+    { timeoutMs: 6000 })
+  const map = {}
+  if (r.ok) {
+    for (const line of r.stdout.split('\n')) {
+      const [ip, role, host] = line.split('|')
+      if (ip) map[ip] = { role: role || 'benign', host: host || '' }
+    }
+  }
+  return map
+}
+
+/*
+ * Build a REAL network topology from the cluster: nodes are pods (their actual
+ * Kubernetes IPs and roles), edges are the src->dst connections actually seen
+ * on the wire this window, aggregated. Attack edges (an attacker source, or a
+ * flagged endpoint) are marked so the graph lights up the intrusion. Nothing is
+ * synthetic — every node is a running pod, every edge is observed traffic.
+ */
+export async function topology({ seconds = 6, limit = 40000 } = {}) {
+  const p = await probe()
+  if (!p.available) return { available: false, reason: p.reason }
+
+  const started = Date.now()
+  const [gt, inv] = await Promise.all([groundTruth(), inventory()])
+  const malSet = new Set(gt.ips)
+  const bpf = 'tcp and net 10.244.0.0/16'
+  const captures = await Promise.all(
+    p.workers.map((w) =>
+      run('docker', ['exec', w, 'timeout', String(seconds), 'tcpdump', '-i', 'any', '-n', '-l',
+        '-c', String(limit), bpf], { timeoutMs: (seconds + 6) * 1000 })
+    )
+  )
+  const packets = captures.flatMap((c) => parse(c.stdout))
+  const span = observedSpan(packets, seconds)
+  const flaggedSet = new Set(scoreEndpoints(packets, span, malSet).filter((e) => e.flagged).map((e) => e.ip))
+
+  // aggregate directed edges from SYN initiations, excluding infra chatter
+  const edgeMap = new Map()
+  const seen = new Set()
+  for (const pk of packets) {
+    if (!pk.synOnly) continue
+    if (INFRA_PREFIXES.some((x) => pk.src.startsWith(x) || pk.dst.startsWith(x))) continue
+    seen.add(pk.src); seen.add(pk.dst)
+    const key = pk.src + '>' + pk.dst
+    const e = edgeMap.get(key) || { src: pk.src, dst: pk.dst, packets: 0, ports: new Set() }
+    e.packets += 1
+    e.ports.add(pk.dport)
+    edgeMap.set(key, e)
+  }
+
+  // nodes: every pod in the inventory (so the whole network shows, not only the
+  // ones that happened to send this window), plus any seen address not in it.
+  const ipset = new Set([...Object.keys(inv), ...seen])
+  const nodes = [...ipset].filter((ip) => !INFRA_PREFIXES.some((x) => ip.startsWith(x))).map((ip) => {
+    const meta = inv[ip] || { role: 'unknown', host: '' }
+    const role = malSet.has(ip) ? 'attacker' : meta.role
+    return { id: ip, role, host: meta.host, flagged: flaggedSet.has(ip), subnet: ip.split('.').slice(0, 3).join('.') + '.0/24' }
+  })
+
+  const edges = [...edgeMap.values()].map((e) => ({
+    src: e.src, dst: e.dst, packets: e.packets, ports: e.ports.size,
+    attack: malSet.has(e.src) || flaggedSet.has(e.src)
+  })).sort((a, b) => b.packets - a.packets).slice(0, 600)
+
+  const counts = nodes.reduce((a, n) => ((a[n.role] = (a[n.role] || 0) + 1), a), {})
+  return {
+    available: true, source: p.source, at: new Date().toISOString(),
+    nodes, edges, counts,
+    attacking: nodes.some((n) => n.role === 'attacker'),
+    tookMs: Date.now() - started
+  }
+}
+
 /*
  * Run a real capture and return live packets + per-endpoint verdicts.
  *   seconds  how long tcpdump listens (bounded)
