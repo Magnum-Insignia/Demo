@@ -124,7 +124,7 @@ export default function LiveCapturePanel() {
                         <th className="p-1.5">SYNs</th>
                         <th className="p-1.5">dstPorts</th>
                         <th className="p-1.5">rate/s</th>
-                        <th className="p-1.5">verdict</th>
+                        <th className="p-1.5">MITRE stage</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -139,12 +139,13 @@ export default function LiveCapturePanel() {
                           <td className="p-1.5">
                             <span
                               className={
-                                'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ' +
+                                'px-1.5 py-0.5 rounded text-[9px] font-bold ' +
                                 (e.flagged ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500')
                               }
                             >
-                              {e.flagged ? 'malicious' : 'benign'}
+                              {e.stageLabel}
                             </span>
+                            {e.mitre !== 'Baseline' && <span className="ml-1 text-[8.5px] text-slate-400">{e.mitre}</span>}
                             {e.groundTruth === 'malicious' && <span className="ml-1 text-[8.5px] text-slate-400">known-bad</span>}
                           </td>
                         </tr>

@@ -151,15 +151,25 @@ function scoreEndpoints(packets, seconds, malSet) {
     const fanout = nPorts / Math.max(nDst, 1)
     const targetRate = maxTarget / span
     const connRate = a.syns / span
-    const scan = 0.6 * Math.min(portRate / 3, 1) + 0.4 * Math.min(fanout / 40, 1)
-    const brute = 0.6 * Math.min(targetRate / 5, 1) + 0.4 * Math.min(connRate / 8, 1)
+    const scan = 0.6 * Math.min(portRate / 4, 1) + 0.4 * Math.min(fanout / 40, 1)
+    const brute = 0.6 * Math.min(targetRate / 8, 1) + 0.4 * Math.min(connRate / 16, 1)
     const score = Math.max(scan, brute)
+    const flagged = score >= THRESHOLD
+    const signal = scan >= brute ? 'scan' : 'brute-force'
+    // Map the behaviour to a MITRE ATT&CK stage — a port sweep is
+    // Reconnaissance, a credential brute-force is Credential Access — so the
+    // per-endpoint verdict is a kill-chain stage, not a bare benign/malicious.
+    const stage = !flagged
+      ? { stage: 'Normal Operations', mitre: 'Baseline' }
+      : signal === 'scan'
+        ? { stage: 'Reconnaissance', mitre: 'TA0043' }
+        : { stage: 'Credential Access', mitre: 'TA0006' }
     rows.push({
       ip, score: +score.toFixed(3), syns: a.syns, dstHosts: nDst, dstPorts: nPorts,
       topTarget: maxTarget, connRate: +(a.syns / span).toFixed(1),
       portEntropy: +entropy(a.dstPorts).toFixed(2),
-      signal: scan >= brute ? 'scan' : 'brute-force',
-      flagged: score >= THRESHOLD,
+      signal, flagged,
+      stageLabel: stage.stage, mitre: stage.mitre,
       groundTruth: malSet.has(ip) ? 'malicious' : 'benign'
     })
   }

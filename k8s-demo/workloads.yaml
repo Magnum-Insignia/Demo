@@ -36,15 +36,32 @@ spec:
           command: ["/bin/sh","-c"]
           args:
             - |
-              # serve, then chat to random peers at a calm cadence
+              # Real east-west chatter with a NATURAL rhythm, so the aggregate
+              # telemetry breathes instead of sitting on a dead-flat line:
+              #  - each pod picks a personality (chatty / normal / quiet) at start,
+              #    so per-pod rates differ several-fold.
+              #  - every pod rides a shared wall-clock rhythm (busy minutes and
+              #    calm minutes), which correlates the fleet so the network-wide
+              #    volume rises and falls in waves like a real office does.
+              #  - pods occasionally go idle for a spell (a break in their traffic).
               httpd -p 8080 -h /tmp 2>/dev/null
               echo ok > /tmp/index.html
+              P=$(( RANDOM % 3 ))                 # 0 chatty, 1 normal, 2 quiet
+              case $P in 0) BASE=6;; 1) BASE=3;; *) BASE=1;; esac
               while true; do
-                for i in 1 2 3; do
+                # shared rhythm: a slow wave over ~2 min, same phase for all pods
+                M=$(( $(date +%s) / 20 % 6 ))     # 0..5 bucket, ~2 min cycle
+                case $M in 0|1) WAVE=3;; 2|5) WAVE=1;; *) WAVE=0;; esac
+                # occasional idle break (~1 in 12 cycles)
+                if [ $(( RANDOM % 12 )) -eq 0 ]; then sleep $(( (RANDOM % 15) + 8 )); continue; fi
+                REQ=$(( BASE + WAVE + (RANDOM % 3) ))
+                n=0
+                while [ $n -lt $REQ ]; do
                   wget -q -T 2 -O /dev/null "http://benign.netsim.svc.cluster.local:8080/" 2>/dev/null
                   nslookup benign.netsim.svc.cluster.local >/dev/null 2>&1
+                  n=$((n+1))
                 done
-                sleep $(( (RANDOM % 4) + 3 ))
+                sleep $(( (RANDOM % 5) + 2 ))
               done
 ---
 apiVersion: v1

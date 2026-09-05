@@ -93,8 +93,8 @@ def score(agg: dict) -> list:
         port_rate = n_ports / span
         fanout = n_ports / max(n_dst, 1)
         target_rate = max_target / span
-        scan = 0.60 * min(port_rate / 3.0, 1.0) + 0.40 * min(fanout / 40.0, 1.0)
-        brute = 0.60 * min(target_rate / 5.0, 1.0) + 0.40 * min(conn_rate / 8.0, 1.0)
+        scan = 0.60 * min(port_rate / 4.0, 1.0) + 0.40 * min(fanout / 40.0, 1.0)
+        brute = 0.60 * min(target_rate / 8.0, 1.0) + 0.40 * min(conn_rate / 16.0, 1.0)
         score_v = max(scan, brute)
         rows.append({
             "ip": ip, "score": round(score_v, 3), "packets": a["packets"],
