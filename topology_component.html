@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Network Topology Component — standalone</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Only needed if a node is above the critical threshold — safe to drop if your
+     frontend already has its own alert/pulse animation. */
+  @keyframes pulse-red-topo { 0%,100%{ opacity:1; } 50%{ opacity:0.55; } }
+  .pulse-red-topo { animation: pulse-red-topo 1.4s infinite; }
+</style>
+</head>
+<body class="bg-slate-950 p-8">
+
+<!--
+  ============================================================================
+  NETWORK TOPOLOGY NODE GRAPH — standalone component
+  ============================================================================
+  This is the exact graph from the SENTINEL dashboard, extracted so it can be
+  dropped into any JS frontend (vanilla, React, Vue — it's plain DOM/SVG calls,
+  so it works inside a useEffect/mounted hook just as easily as inline).
+
+  WHAT IT DRAWS:
+    - Dashed subnet boundary boxes (CIDR-labeled)
+    - A firewall node (rotated square / diamond) and router node (hexagon)
+      sitting between the external IP and the internal subnets
+    - Host nodes whose FILL COLOR and RADIUS encode live/forecast risk
+      (green -> amber -> red as risk crosses 40 / 75), with a live numeric
+      risk value burned into the node
+    - Edges: dashed grey for infra links, solid grey for app-level flows
+      (each optionally labeled with a protocol tag)
+
+  HOW THE TIME SCRUBBER WORKS:
+    Each host has `riskStart` (risk at t=0, i.e. 6 windows ago) and `risk`
+    (risk at t=10, i.e. the model's current/forecast endpoint). riskAt(h, t)
+    linearly interpolates between them. Dragging the slider calls
+    drawTopology(t) again, which just re-computes colors/radii — it does not
+    rebuild positions, so it's cheap enough to call on every `input` event.
+
+  TO WIRE INTO YOUR OWN APP:
+    1. Replace TOPO_HOSTS / TOPO_INFRA / TOPO_SUBNETS / TOPO_EDGES with your
+       real data (or keep the shape and populate it from your API response).
+    2. Call drawTopology(0) once on mount, and again from a `selectHost`
+       callback if you want click-to-select highlighting (see the
+       `onNodeClick` hook below — currently just logs the id).
+    3. If you don't need the forecast scrubber, delete the scrubber markup
+       and just call drawTopology(0) once; everything else still works.
+  ============================================================================
+-->
+
+<div class="max-w-5xl mx-auto space-y-3">
+  <div class="flex justify-between items-center">
+    <h3 class="font-bold text-sm text-slate-100 font-mono">Interactive Network Topology Graph</h3>
+    <div class="flex space-x-3 text-xs">
+      <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="text-slate-300">Normal</span></span>
+      <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span class="text-slate-300">Suspicious</span></span>
+      <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="text-slate-300">Infiltrated</span></span>
+      <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 bg-orange-400 rotate-45"></span><span class="text-slate-300">Firewall</span></span>
+      <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 bg-sky-400" style="clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)"></span><span class="text-slate-300">Router</span></span>
+    </div>
+  </div>
+
+  <div class="h-96 bg-slate-900/90 rounded-lg border border-slate-800 relative overflow-hidden">
+    <svg class="w-full h-full" viewBox="0 0 900 360" id="topoSvg"></svg>
+    <div class="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-700 p-2 rounded text-[11px] font-mono" id="topoCallout">
+      <span class="text-red-400 font-bold">Node SRV-HWA (10.6.1.7) Compromised</span> — Infiltration path active from external ingress.
+    </div>
+  </div>
+
+  <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-4 py-3 flex items-center space-x-4">
+    <span class="text-[11px] font-mono text-slate-400 whitespace-nowrap">Observed <b class="text-slate-200">t</b></span>
+    <input type="range" id="topoScrub" min="0" max="10" value="0" oninput="scrubTopology(this.value)" class="flex-1 accent-blue-500">
+    <span class="text-[11px] font-mono text-slate-400 whitespace-nowrap">Forecast <b id="topoScrubTag" class="text-amber-400">now</b></span>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+ * DATA — replace with your real hosts/infra/subnets/edges
+ * ========================================================================= */
+const TOPO_HOSTS = {
+  HWA:    { label:'SRV-HWA',     type:'server', x:400, y:100, riskStart:22, risk:91 },
+  DONALD: { label:'SRV-DONALD',  type:'server', x:490, y:150, riskStart:18, risk:54 },
+  LON:    { label:'SRV-LON',     type:'server', x:400, y:270, riskStart:15, risk:68 },
+  ROBBYN: { label:'SRV-ROBBYN',  type:'server', x:490, y:320, riskStart:10, risk:14 },
+  DB:     { label:'DB-FIN',      type:'db',     x:690, y:100, riskStart:20, risk:47 },
+  CAM4:   { label:'PC-EMIKO',    type:'pc',     x:690, y:260, riskStart:14, risk:22 },
+  EXT1:   { label:'185.220.101.4', type:'ext',  x:55,  y:190, riskStart:30, risk:35 }
+};
+
+const TOPO_INFRA = {
+  FW:  { label:'FW-EDGE',  x:150, y:190, sub:'1,204 blocked/hr' },
+  RTR: { label:'RTR-CORE', x:250, y:190, sub:'12.4k pkt/s' }
+};
+
+const TOPO_SUBNETS = [
+  { label:'10.6.1.0/24 · IT-OPS',  x:330, y:30,  w:220, h:170 },
+  { label:'10.6.2.0/24 · DMZ-SVC', x:330, y:230, w:220, h:150 },
+  { label:'10.6.5.0/24 · FIN-WS',  x:620, y:30,  w:200, h:320 }
+];
+
+// [ fromId, toId, edgeLabel, edgeClass ]  — edgeClass 'infra' renders dashed grey
+const TOPO_EDGES = [
+  ['EXT1','FW','','infra'], ['FW','RTR','','infra'], ['RTR','HWA','GW','infra'], ['RTR','LON','GW','infra'],
+  ['HWA','DONALD','SMB'], ['LON','ROBBYN','DNS'], ['DONALD','CAM4','SMB'], ['DONALD','DB','SQL'], ['HWA','DB','SQL']
+];
+
+/* ============================================================================
+ * PALETTE — tweak to match your own design tokens
+ * ========================================================================= */
+const PAL = {
+  crit:'#EF4444', watch:'#F59E0B', safe:'#10B981',
+  server:'#8B5CF6', pc:'#F59E0B', ext:'#22D3C7', db:'#94A3B8',
+  infra:'#64748B', fw:'#FB923C', router:'#38BDF8',
+  edge:'#334155', edgeLabel:'#64748B', subnetFill:'#1E293B', subnetStroke:'#334155',
+  nodeLabel:'#E2E8F0', nodeSub:'#64748B'
+};
+const TYPE_COLOR = { server: PAL.server, pc: PAL.pc, ext: PAL.ext, db: PAL.db };
+
+/* ============================================================================
+ * CORE LOGIC
+ * ========================================================================= */
+const NS = 'http://www.w3.org/2000/svg';
+
+function riskColor(r){ return r > 75 ? PAL.crit : r > 40 ? PAL.watch : PAL.safe; }
+function riskAt(host, t){ return host.riskStart + (host.risk - host.riskStart) * (t / 10); }
+
+// Hook this up to your own selection state / side panel if you want
+// click-to-inspect behaviour. Currently a no-op stub.
+function onNodeClick(hostId){
+  console.log('topology node clicked:', hostId);
+  // e.g. setSelectedHost(hostId); renderInfoPanel(hostId); drawTopology(currentT);
+}
+
+function drawTopology(t){
+  const svg = document.getElementById('topoSvg');
+  if(!svg) return;
+  svg.innerHTML = '';
+
+  // --- subnet boundary boxes ---
+  TOPO_SUBNETS.forEach(s => {
+    const r = document.createElementNS(NS,'rect');
+    r.setAttribute('x', s.x); r.setAttribute('y', s.y);
+    r.setAttribute('width', s.w); r.setAttribute('height', s.h);
+    r.setAttribute('rx', 10);
+    r.setAttribute('fill', PAL.subnetFill);
+    r.setAttribute('stroke', PAL.subnetStroke);
+    r.setAttribute('stroke-dasharray', '4,4');
+    svg.appendChild(r);
+
+    const lb = document.createElementNS(NS,'text');
+    lb.setAttribute('x', s.x + 10); lb.setAttribute('y', s.y + 18);
+    lb.setAttribute('fill', PAL.edgeLabel); lb.setAttribute('font-size', '10');
+    lb.setAttribute('font-family', 'monospace');
+    lb.textContent = s.label;
+    svg.appendChild(lb);
+  });
+
+  // --- edges (drawn before nodes so nodes sit on top) ---
+  const allNodes = Object.assign({}, TOPO_HOSTS, TOPO_INFRA);
+  TOPO_EDGES.forEach(([a, b, lbl, cls]) => {
+    const ha = allNodes[a], hb = allNodes[b];
+    const line = document.createElementNS(NS,'line');
+    line.setAttribute('x1', ha.x); line.setAttribute('y1', ha.y);
+    line.setAttribute('x2', hb.x); line.setAttribute('y2', hb.y);
+    line.setAttribute('stroke', cls === 'infra' ? PAL.infra : PAL.edge);
+    line.setAttribute('stroke-width', cls === 'infra' ? 1.3 : 1.5);
+    if (cls === 'infra') line.setAttribute('stroke-dasharray', '3,3');
+    svg.appendChild(line);
+
+    if (lbl) {
+      const t2 = document.createElementNS(NS,'text');
+      t2.setAttribute('x', (ha.x + hb.x) / 2); t2.setAttribute('y', (ha.y + hb.y) / 2 - 4);
+      t2.setAttribute('fill', PAL.edgeLabel); t2.setAttribute('font-size', '7.5');
+      t2.setAttribute('font-family', 'monospace');
+      t2.textContent = lbl;
+      svg.appendChild(t2);
+    }
+  });
+
+  // --- infra nodes: firewall (diamond) + router (hexagon) ---
+  Object.values(TOPO_INFRA).forEach(n => {
+    const g = document.createElementNS(NS,'g');
+
+    if (n.label.startsWith('FW')) {
+      const rect = document.createElementNS(NS,'rect');
+      rect.setAttribute('x', n.x - 10); rect.setAttribute('y', n.y - 10);
+      rect.setAttribute('width', 20); rect.setAttribute('height', 20);
+      rect.setAttribute('fill', PAL.fw);
+      rect.setAttribute('transform', `rotate(45 ${n.x} ${n.y})`);
+      g.appendChild(rect);
+    } else {
+      const poly = document.createElementNS(NS,'polygon');
+      const pts = [[-12,0],[-6,-10],[6,-10],[12,0],[6,10],[-6,10]]
+        .map(p => (n.x + p[0]) + ',' + (n.y + p[1])).join(' ');
+      poly.setAttribute('points', pts);
+      poly.setAttribute('fill', PAL.router);
+      g.appendChild(poly);
+    }
+
+    const t1 = document.createElementNS(NS,'text');
+    t1.setAttribute('x', n.x); t1.setAttribute('y', n.y + 26);
+    t1.setAttribute('text-anchor', 'middle'); t1.setAttribute('fill', PAL.nodeLabel);
+    t1.setAttribute('font-size', '9'); t1.setAttribute('font-family', 'monospace');
+    t1.textContent = n.label;
+    g.appendChild(t1);
+
+    const t2 = document.createElementNS(NS,'text');
+    t2.setAttribute('x', n.x); t2.setAttribute('y', n.y + 37);
+    t2.setAttribute('text-anchor', 'middle'); t2.setAttribute('fill', PAL.nodeSub);
+    t2.setAttribute('font-size', '7.5'); t2.setAttribute('font-family', 'monospace');
+    t2.textContent = n.sub;
+    g.appendChild(t2);
+
+    svg.appendChild(g);
+  });
+
+  // --- host nodes: circle fill/radius encode forecast risk at time t ---
+  Object.entries(TOPO_HOSTS).forEach(([id, h]) => {
+    const rv = riskAt(h, t);
+    const g = document.createElementNS(NS,'g');
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', () => onNodeClick(id));
+
+    const r = 13 + (rv / 100) * 9;
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('cx', h.x); c.setAttribute('cy', h.y); c.setAttribute('r', r);
+    c.setAttribute('fill', riskColor(rv));
+    c.setAttribute('fill-opacity', '0.9');
+    c.setAttribute('stroke', TYPE_COLOR[h.type]);
+    c.setAttribute('stroke-width', '2');
+    if (rv > 75) c.setAttribute('class', 'pulse-red-topo');
+    g.appendChild(c);
+
+    const val = document.createElementNS(NS,'text');
+    val.setAttribute('x', h.x); val.setAttribute('y', h.y + 3.5);
+    val.setAttribute('text-anchor', 'middle'); val.setAttribute('font-size', '7.5');
+    val.setAttribute('fill', '#0F172A'); val.setAttribute('font-family', 'monospace');
+    val.setAttribute('font-weight', 'bold');
+    val.textContent = Math.round(rv);
+    g.appendChild(val);
+
+    const lb = document.createElementNS(NS,'text');
+    lb.setAttribute('x', h.x); lb.setAttribute('y', h.y + r + 13);
+    lb.setAttribute('text-anchor', 'middle'); lb.setAttribute('fill', PAL.nodeLabel);
+    lb.setAttribute('font-size', '9'); lb.setAttribute('font-family', 'monospace');
+    lb.setAttribute('font-weight', 'bold');
+    lb.textContent = h.label;
+    g.appendChild(lb);
+
+    svg.appendChild(g);
+  });
+}
+
+let currentT = 0;
+function scrubTopology(v){
+  currentT = parseInt(v, 10);
+  const tag = document.getElementById('topoScrubTag');
+  if (tag) tag.textContent = currentT === 0 ? 'now' : ('t+' + (currentT * 4) + 's');
+  drawTopology(currentT);
+  // If your app also has pie charts / traffic lines that should react to the
+  // same forecast horizon, call their re-render functions here too, e.g.:
+  //   drawDonuts(currentT); drawTraffic(currentT);
+}
+
+drawTopology(0); // initial render
+</script>
+</body>
+</html>
