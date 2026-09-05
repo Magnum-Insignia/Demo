@@ -70,7 +70,10 @@ export const OPERATIONS = {
     evaluation: () => ({
       confusion: model.CONFUSION_MATRIX,
       metrics: model.ENGINE_METRICS,
-      baseline: model.BASELINE_METRICS
+      baseline: model.BASELINE_METRICS,
+      known: model.ENGINE_METRICS.known,
+      unknown: model.ENGINE_METRICS.unknown,
+      topFeatures: model.TOP_FEATURES
     }),
     transitionOperator: () => ({ stages: model.STAGES, matrix: model.TRANSITION_MATRIX }),
     probes: () => model.LAYER_PROBES,

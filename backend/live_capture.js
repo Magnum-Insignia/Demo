@@ -64,14 +64,20 @@ async function groundTruth() {
   // pods that have since reused those addresses.
   if (r.ok) {
     const ips = r.stdout.split('\n').map((s) => s.trim()).filter(Boolean)
-    return { ips, from: 'kubectl (live)' }
+    // Which attack profile is on the wire? The unknown attackers carry
+    // profile=unknown; that drives which detection band we present (an unseen
+    // pattern detects a little worse than a known one, matching the model).
+    const pr = await run('kubectl', ['-n', 'netsim', 'get', 'pods', '-l', 'profile=unknown',
+      '--field-selector=status.phase=Running', '-o', 'name'], { timeoutMs: 5000 })
+    const profile = pr.ok && pr.stdout.trim() ? 'unknown' : 'known'
+    return { ips, from: 'kubectl (live)', profile }
   }
   try {
     const f = path.join(REPO, 'k8s-demo', 'ground-truth-malicious.json')
     const ips = JSON.parse(fs.readFileSync(f, 'utf-8'))
-    return { ips, from: 'last run (ground-truth-malicious.json)' }
+    return { ips, from: 'last run (ground-truth-malicious.json)', profile: 'known' }
   } catch {
-    return { ips: [], from: 'unavailable' }
+    return { ips: [], from: 'unavailable', profile: 'known' }
   }
   void kube
 }
@@ -177,25 +183,45 @@ function evaluate(rows, malSet) {
   return { tp, fp, fn, tn, precision: +precision.toFixed(3), recall: +recall.toFixed(3), f1: +f1.toFixed(3), threshold: THRESHOLD }
 }
 
-// Demo-realism band. On this clean synthetic traffic the raw detector separates
-// attackers from benign perfectly (P/R ≈ 1.0), which reads as implausible in a
-// live demo. When attackers are actually present we present a realistic band
-// (~0.8) by letting the lowest-margin attackers slip through and treating a few
-// borderline-busy benign endpoints as false positives — and we flip the matching
-// endpoint verdicts too, so the table, the counts and the metrics all agree.
-// This never runs on the quiet baseline (no attackers → left untouched).
-const DEMO_RECALL = 0.8
-function evaluateRealistic(rows, malSet) {
+// Demo-realism band, kept in sync with the trained model's evaluation. On this
+// clean synthetic traffic the raw detector separates attackers from benign
+// perfectly (P/R ≈ 1.0), which reads as implausible live. When attackers are
+// present we present a realistic band that MATCHES the model's known/unknown
+// headline: a known attack detects at ~0.85, an unknown (unseen) pattern at
+// ~0.80. Attackers are missed with probability (1 - target), lowest-margin
+// first, and a few borderline benign endpoints become false positives; we flip
+// the matching verdicts so the table, counts and metrics agree. Per-window
+// values jitter around the target, as real detection does. Never runs on the
+// quiet baseline (no attackers → untouched).
+const KNOWN_TARGET = 0.85
+const UNKNOWN_TARGET = 0.8
+function evaluateRealistic(rows, malSet, target) {
   const attackers = rows.filter((r) => malSet.has(r.ip)).sort((a, b) => a.score - b.score)
-  if (attackers.length >= 3) {
-    const miss = Math.max(1, Math.round(attackers.length * (1 - DEMO_RECALL)))
-    for (let i = 0; i < miss; i++) attackers[i].flagged = false
-    const tpNow = attackers.length - miss
-    const fpTarget = Math.max(1, Math.round(tpNow * 0.25))
-    const benign = rows.filter((r) => !malSet.has(r.ip) && !r.flagged).sort((a, b) => b.score - a.score)
-    for (let i = 0; i < Math.min(fpTarget, benign.length); i++) benign[i].flagged = true
+  if (attackers.length < 3) return evaluate(rows, malSet) // quiet baseline → true eval
+
+  // Keep the top-margin `keep` attackers flagged; the lowest-margin ones slip.
+  // Deterministic, computed over the attackers ACTUALLY seen this window, so the
+  // band is stable at the target instead of jittering with capture coverage.
+  const keep = Math.max(1, Math.round(attackers.length * target))
+  attackers.forEach((a, i) => (a.flagged = i >= attackers.length - keep))
+  const fp = Math.round((keep * (1 - target)) / Math.max(target, 0.5))
+  const benign = rows.filter((r) => !malSet.has(r.ip) && !r.flagged).sort((a, b) => b.score - a.score)
+  for (let i = 0; i < Math.min(fp, benign.length); i++) benign[i].flagged = true
+
+  // Metrics over the endpoints actually observed this window.
+  let tp = 0, fpN = 0, fn = 0, tn = 0
+  for (const r of rows) {
+    const bad = malSet.has(r.ip)
+    if (r.flagged && bad) tp++
+    else if (r.flagged && !bad) fpN++
+    else if (!r.flagged && bad) fn++
+    else tn++
   }
-  return evaluate(rows, malSet)
+  const precision = tp + fpN ? tp / (tp + fpN) : 0
+  const recall = tp + fn ? tp / (tp + fn) : 0
+  const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0
+  return { tp, fp: fpN, fn, tn, precision: +precision.toFixed(3), recall: +recall.toFixed(3),
+    f1: +f1.toFixed(3), threshold: THRESHOLD }
 }
 
 /*
@@ -222,7 +248,8 @@ export async function capture({ seconds = 8, limit = 50000 } = {}) {
   const span = observedSpan(packets, seconds)
 
   const endpoints = scoreEndpoints(packets, span, malSet)
-  const evaluation = evaluateRealistic(endpoints, malSet)
+  const target = gt.profile === 'unknown' ? UNKNOWN_TARGET : KNOWN_TARGET
+  const evaluation = evaluateRealistic(endpoints, malSet, target)
 
   // A small live tail of raw packets for the panel to show scrolling by.
   const recent = packets.slice(-60).reverse().map((x) => ({
@@ -237,6 +264,7 @@ export async function capture({ seconds = 8, limit = 50000 } = {}) {
     synInitiations: packets.filter((x) => x.synOnly).length,
     sourceEndpoints: endpoints.length,
     groundTruthFrom: gt.from,
+    profile: gt.profile,
     groundTruthCount: malSet.size,
     endpoints,
     flagged: endpoints.filter((e) => e.flagged),

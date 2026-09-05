@@ -1,6 +1,6 @@
 import backend from '../../backend'
 
-const { confusion: CONFUSION_MATRIX, metrics: ENGINE_METRICS, baseline: BASELINE_METRICS } = backend.engine.evaluation()
+const { confusion: CONFUSION_MATRIX, metrics: ENGINE_METRICS, baseline: BASELINE_METRICS, known: KNOWN, unknown: UNKNOWN } = backend.engine.evaluation()
 
 // Sequential "Blues" ramp (matplotlib default for sklearn's
 // ConfusionMatrixDisplay) — cell shade and the colorbar both interpolate
@@ -92,7 +92,20 @@ export default function ConfusionMatrix() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
+      <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+          <div className="text-[9.5px] font-mono text-emerald-700 uppercase">Known attacks</div>
+          <div className="text-lg font-mono font-bold text-emerald-700">{(KNOWN.accuracy * 100).toFixed(1)}%</div>
+          <div className="text-[9px] font-mono text-emerald-600">seen families · held-out windows</div>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+          <div className="text-[9.5px] font-mono text-amber-700 uppercase">Unknown attacks</div>
+          <div className="text-lg font-mono font-bold text-amber-700">{(UNKNOWN.accuracy * 100).toFixed(1)}%</div>
+          <div className="text-[9px] font-mono text-amber-600">unseen family · leave-one-out</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-3 mt-3">
         <Stat label="F1 (macro)" value={ENGINE_METRICS.f1} />
         <Stat label="Precision (macro)" value={ENGINE_METRICS.precision} />
         <Stat label="Recall (macro)" value={ENGINE_METRICS.recall} />

@@ -14,19 +14,21 @@
  * operator, and the resident memory buffer.
  */
 
+import { TRAINED } from './trained_metrics.js'
+
 // ---------------------------------------------------------------------------
 // Model card
 // ---------------------------------------------------------------------------
 
 export const ENGINE = {
   name: 'NAGA-Net',
-  version: 'v1.2.0',
-  architecture: 'GRU state-space core + temporal attention',
+  version: 'v1.3.0',
+  architecture: 'Gradient-boosted temporal dynamics (lag + delta state windows)',
   objective: 'Supervised dynamics — P(S_t+1 | S_t)',
-  trainedOn: 'CIC-IDS-2018 · CTU-13 · UNSW-NB15',
-  trainingWindow: '2 months · 5-minute state windows',
-  lastTrained: '2026-08-14',
-  paramCount: '4.2M',
+  trainedOn: `CSE-CIC-IDS2018 · ${TRAINED.nWindows.toLocaleString()} state windows`,
+  trainingWindow: '3 capture days (Feb 14–16) · 60-second state windows',
+  lastTrained: TRAINED.trainedAt.slice(0, 10),
+  paramCount: `${TRAINED.nFeatures} features · gradient-boosted ensemble`,
   residency: 'resident',
   status: 'operational',
   device: 'local host — offline inference, no external calls',
@@ -42,56 +44,29 @@ export const ENGINE = {
 // uses the same 5-stage vocabulary.
 export const STAGES = ['Nominal', 'Recon', 'Access', 'Lateral', 'C2 / Exfil']
 
+// Held-out stage confusion grid from the trained model (pipeline/train.py),
+// rows = true stage, cols = predicted stage.
 export const CONFUSION_MATRIX = {
-  labels: STAGES,
-  // rows = true stage, cols = predicted stage. Held-out evaluation split,
-  // stratified so attack stages are not swamped by nominal windows.
-  values: [
-    [812, 52, 22, 10, 4],
-    [34, 352, 22, 9, 3],
-    [12, 26, 320, 16, 6],
-    [6, 10, 21, 252, 11],
-    [3, 4, 8, 20, 205]
-  ]
+  labels: TRAINED.confusion.labels,
+  values: TRAINED.confusion.values
 }
 
-// Macro-averaged one-vs-rest precision/recall/F1/FPR across every class, plus
-// overall accuracy — all derived from the matrix above so the headline
-// numbers stay internally consistent with the grid the operator can see.
-function metricsFromMatrix(m) {
-  const n = m.length
-  const total = m.flat().reduce((a, b) => a + b, 0)
-  const perClass = m.map((row, i) => {
-    const tp = m[i][i]
-    const rowSum = row.reduce((a, b) => a + b, 0)
-    const colSum = m.reduce((s, r) => s + r[i], 0)
-    const fn = rowSum - tp
-    const fp = colSum - tp
-    const tn = total - tp - fn - fp
-    const precision = tp + fp ? tp / (tp + fp) : 0
-    const recall = tp + fn ? tp / (tp + fn) : 0
-    const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0
-    const fpr = fp + tn ? fp / (fp + tn) : 0
-    return { precision, recall, f1, fpr }
-  })
-  const avg = (key) => perClass.reduce((s, c) => s + c[key], 0) / n
-  const accuracy = m.reduce((s, row, i) => s + row[i], 0) / total
-  return { accuracy, f1: avg('f1'), precision: avg('precision'), recall: avg('recall'), fpr: avg('fpr'), perClass }
-}
+// Headline evaluation from the trained model. `known` is the released headline
+// (accuracy/precision/recall/f1/fpr on attack families the model has seen);
+// `unknown` is generalisation to an attack family held out of training.
+export const ENGINE_METRICS = { ...TRAINED.known, known: TRAINED.known, unknown: TRAINED.unknown }
 
-export const ENGINE_METRICS = metricsFromMatrix(CONFUSION_MATRIX.values)
-
-// Logistic-regression baseline trained on the same feature matrix — the
-// comparison the brief requires, showing what temporal dynamics buys over a
-// per-flow classifier that sees each flow in isolation.
+// Logistic-regression baseline (current window only, no temporal context) — the
+// comparison the brief requires, showing what the temporal dynamics buys over a
+// classifier that sees each window in isolation.
 export const BASELINE_METRICS = {
-  label: 'Logistic regression (per-flow, no temporal context)',
-  accuracy: 0.712,
-  f1: 0.664,
-  precision: 0.681,
-  recall: 0.649,
-  fpr: 0.121
+  label: 'Logistic regression (current window only, no temporal context)',
+  ...TRAINED.baseline
 }
+
+// Real permutation-importance attributions from the trained model — the driving
+// features behind a prediction (the brief's explainability requirement).
+export const TOP_FEATURES = TRAINED.topFeatures
 
 // ---------------------------------------------------------------------------
 // Learned transition operator

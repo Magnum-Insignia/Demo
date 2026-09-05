@@ -49,3 +49,6 @@ k8s-demo/caps/
 
 # e2e screenshots
 desktop-app/e2e-*.png
+
+# generated training metrics (JS artifact IS committed)
+data/processed/metrics.json
