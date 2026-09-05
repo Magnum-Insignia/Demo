@@ -72,16 +72,14 @@ export const TOP_FEATURES = TRAINED.topFeatures
 // Learned transition operator
 // ---------------------------------------------------------------------------
 
-// Row-stochastic P(next stage | current stage) — diagonal-dominant (stages
-// mostly persist) with rising probability of progressing as severity climbs.
-// This is the operator the K-step rollout iterates.
-export const TRANSITION_MATRIX = [
-  [0.92, 0.06, 0.01, 0.01, 0.0],
-  [0.15, 0.55, 0.25, 0.04, 0.01],
-  [0.05, 0.1, 0.5, 0.3, 0.05],
-  [0.02, 0.03, 0.1, 0.55, 0.3],
-  [0.01, 0.01, 0.03, 0.1, 0.85]
-]
+// Row-stochastic P(next stage | current stage), ESTIMATED FROM DATA: stage->
+// stage transitions counted across consecutive windows within each capture
+// (pipeline/train.py), Laplace-smoothed and row-normalised. This is the world
+// model's learned transition operator — the one the K-step rollout iterates and
+// the Brain Control heatmap draws. Representative risk per stage travels with
+// it so the forecast can map a rolled stage distribution back to a risk value.
+export const TRANSITION_MATRIX = TRAINED.transition.matrix
+export const STAGE_RISK = [12, 38, 58, 76, 90]
 
 // ---------------------------------------------------------------------------
 // Resident memory

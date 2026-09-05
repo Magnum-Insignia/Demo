@@ -182,6 +182,24 @@ def main():
     stage_unknown_acc = float(np.mean(stage_unknown_accs))
     print(f"\n  STAGE known acc {stage_known_acc*100:.1f}%  |  STAGE unknown acc {stage_unknown_acc*100:.1f}%")
 
+    # ---- learned stage-transition operator P(S_t+1 | S_t) ----
+    # Count stage->stage transitions across consecutive windows WITHIN each
+    # capture (never across a day boundary), Laplace-smoothed, row-normalised.
+    # This is the world model's transition operator, estimated from data — what
+    # the K-step rollout and the Brain Control heatmap roll forward.
+    # Diagonal-heavy smoothing prior: stages with little/no data (e.g. C2/Exfil,
+    # which these captures never reach) default to persisting rather than to a
+    # uniform jump. Stages with real data are dominated by their counts.
+    T = np.full((5, 5), 0.5)
+    np.fill_diagonal(T, 3.0)
+    stage_idx = ys.map(si).to_numpy()
+    cap = df["capture_id"].to_numpy()
+    for i in range(len(df) - 1):
+        if cap[i] == cap[i + 1]:
+            T[stage_idx[i], stage_idx[i + 1]] += 1
+    transition = (T / T.sum(axis=1, keepdims=True))
+    transition = [[round(float(v), 4) for v in row] for row in transition]
+
     # ---- feature attribution (permutation importance = explainability) ----
     pi = permutation_importance(model, X[te], y[te], n_repeats=8, random_state=7, n_jobs=1)
     order = np.argsort(pi.importances_mean)[::-1][:8]
@@ -230,6 +248,7 @@ def main():
         "unknown": headline_unknown,
         "baseline_metrics": headline_baseline,
         "confusion": {"labels": stage_names, "values": presented_cm},
+        "transition": {"labels": stage_names, "matrix": transition},
         "top_features": top_features,   # real permutation importances
         # ---- the true measured evaluation, kept in full ----
         "measured_known": known,
@@ -258,6 +277,7 @@ def main():
         "nFeatures": out["n_features"], "nAttack": out["n_attack"], "nBenign": out["n_benign"],
         "known": headline_known, "unknown": headline_unknown, "baseline": headline_baseline,
         "confusion": {"labels": stage_names, "values": presented_cm},
+        "transition": {"labels": stage_names, "matrix": transition},
         "topFeatures": top_features,
     }
     with open(js_path, "w", encoding="utf-8") as f:

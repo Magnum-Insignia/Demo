@@ -3,7 +3,7 @@
 // Headline known/unknown are calibrated to a credible demo band; the
 // full measured evaluation is in data/processed/metrics.json.
 export const TRAINED = {
-  "trainedAt": "2026-09-05T05:40:49.252792+00:00",
+  "trainedAt": "2026-09-05T06:08:56.390724+00:00",
   "nWindows": 1306,
   "nFeatures": 82,
   "nAttack": 303,
@@ -72,6 +72,52 @@ export const TRAINED = {
         10,
         17,
         202
+      ]
+    ]
+  },
+  "transition": {
+    "labels": [
+      "Nominal",
+      "Recon",
+      "Access",
+      "Lateral",
+      "C2 / Exfil"
+    ],
+    "matrix": [
+      [
+        0.9891,
+        0.0025,
+        0.0025,
+        0.0055,
+        0.0005
+      ],
+      [
+        0.0263,
+        0.9579,
+        0.0053,
+        0.0053,
+        0.0053
+      ],
+      [
+        0.0128,
+        0.0026,
+        0.9795,
+        0.0026,
+        0.0026
+      ],
+      [
+        0.1667,
+        0.0185,
+        0.0185,
+        0.7778,
+        0.0185
+      ],
+      [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.6
       ]
     ]
   },

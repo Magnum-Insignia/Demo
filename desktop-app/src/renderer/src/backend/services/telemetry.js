@@ -6,7 +6,42 @@
  * attributions behind the current prediction. Deterministic per
  * (window, K, seed), so a given configuration renders the same state until the
  * operator re-runs the rollout.
+ *
+ * The forecast past NOW is the LEARNED transition operator rolled forward: the
+ * current risk is mapped to a stage distribution, iterated K steps through the
+ * data-estimated transition matrix, and mapped back to an expected risk per
+ * step. So the projection is a function of learned dynamics, not a fixed decay
+ * curve — a quiet baseline that the operator says stays quiet forecasts flat,
+ * and an elevated state persists then mean-reverts the way the data does.
  */
+import { TRANSITION_MATRIX, STAGE_RISK } from './model.js'
+
+// Roll the learned operator forward from `startRisk` for K steps.
+// Returns { risk:[K], band:[K] } — expected risk per step and a spread that
+// widens with horizon (forecast uncertainty grows the further out you look).
+function rollOperator(startRisk, kSteps, ceiling) {
+  const n = STAGE_RISK.length
+  // seed the stage distribution at the stage nearest the current risk
+  let start = 0
+  for (let i = 1; i < n; i++) {
+    if (Math.abs(STAGE_RISK[i] - startRisk) < Math.abs(STAGE_RISK[start] - startRisk)) start = i
+  }
+  let dist = STAGE_RISK.map((_, i) => (i === start ? 1 : 0))
+  const risk = []
+  const band = []
+  for (let s = 1; s <= kSteps; s++) {
+    const next = new Array(n).fill(0)
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) next[j] += dist[i] * TRANSITION_MATRIX[i][j]
+    }
+    dist = next
+    const mean = dist.reduce((a, p, i) => a + p * STAGE_RISK[i], 0)
+    const variance = dist.reduce((a, p, i) => a + p * (STAGE_RISK[i] - mean) ** 2, 0)
+    risk.push(Math.min(mean, ceiling))
+    band.push(Math.min(Math.sqrt(variance) + s * 0.6, 40))
+  }
+  return { risk, band }
+}
 
 function mulberry32(seed) {
   return function () {
@@ -191,8 +226,10 @@ export function generate(windowKey, kSteps, seedTag) {
 
   const riskNow = historyRisk[points - 1]
 
-  const ceiling = 85 // the forecast never projects above 85% — no false certainty
-  const decay = 0.9
+  // forward projection: the same LEARNED transition operator rolled forward
+  // (the air-gapped fallback uses the identical dynamics as the live path)
+  const ceiling = 85
+  const op = rollOperator(riskNow, kSteps, ceiling)
   const forecastLabels = []
   const forecastRisk = []
   const forecastUpper = []
@@ -200,10 +237,8 @@ export function generate(windowKey, kSteps, seedTag) {
   const forecastLoad = []
   let breachStep = null
   for (let s = 1; s <= kSteps; s++) {
-    const base = ceiling - (ceiling - riskNow) * Math.pow(decay, s)
-    const jitter = (rnd() - 0.5) * 3
-    const val = clamp(base + jitter, riskNow, ceiling)
-    const band = clamp(2.5 + s * 1.3 + rnd() * 1.5, 0, 40)
+    const val = clamp(op.risk[s - 1] + (rnd() - 0.5) * 2, 0, ceiling)
+    const band = clamp(op.band[s - 1] + rnd() * 1.5, 0, 40)
     forecastRisk.push(val)
     forecastUpper.push(clamp(val + band, 0, 100))
     forecastLower.push(clamp(val - band, 0, 100))
@@ -337,9 +372,10 @@ export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
   const last = n ? points[n - 1] : null
   const nowMs = last ? last.tMs : Date.now()
 
-  // forward projection from the live current risk
-  const ceiling = 85 // never project above 85% — a 100% forecast is not credible
-  const decay = 0.9
+  // forward projection: the LEARNED transition operator rolled forward from the
+  // live current risk (never above the 85% ceiling)
+  const ceiling = 85
+  const op = rollOperator(riskNow, kSteps, ceiling)
   const forecastLabels = []
   const forecastRisk = []
   const forecastUpper = []
@@ -347,9 +383,8 @@ export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
   const forecastLoad = []
   let breachStep = null
   for (let s = 1; s <= kSteps; s++) {
-    const base = ceiling - (ceiling - riskNow) * Math.pow(decay, s)
-    const val = clamp(base, riskNow, ceiling)
-    const band = clamp(2.5 + s * 1.3, 0, 40)
+    const val = clamp(op.risk[s - 1], 0, ceiling)
+    const band = clamp(op.band[s - 1], 0, 40)
     forecastRisk.push(val)
     forecastUpper.push(clamp(val + band, 0, 100))
     forecastLower.push(clamp(val - band, 0, 100))
