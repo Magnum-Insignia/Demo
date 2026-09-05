@@ -11,7 +11,13 @@
 #   bash attack.sh status     # show live pod counts
 #
 # Then, in the desktop app: Ingest -> Live Capture -> Capture.
-export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config-ocunet}"
+# `config-ocunet` is the pre-rename kubeconfig; fall back to it so a cluster
+# created before the rebrand is still reachable.
+if [ -z "$KUBECONFIG" ]; then
+  KUBECONFIG="$HOME/.kube/config-orbisnet"
+  [ -f "$KUBECONFIG" ] || [ ! -f "$HOME/.kube/config-ocunet" ] || KUBECONFIG="$HOME/.kube/config-ocunet"
+fi
+export KUBECONFIG
 NS=netsim
 N="${2:-10}"
 

@@ -6,13 +6,24 @@
 #   from packets that crossed the bridge.
 set -e
 export PATH="$HOME/bin:$PATH"
-export KUBECONFIG="$HOME/.kube/config-ocunet"
 export MSYS_NO_PATHCONV=1
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 
-echo "== 1. cluster =="
-kind get clusters 2>/dev/null | grep -q ocunet || \
+# The cluster this repo creates is named `orbisnet`. A cluster built before the
+# rebrand is named `ocunet` and is just as usable -- adopt it rather than stand
+# a second 3-node cluster up beside it. The name picks the kubeconfig too, and
+# kind names each node <cluster>-worker[N].
+EXISTING="$(kind get clusters 2>/dev/null || true)"
+case "$EXISTING" in
+  *orbisnet*) CLUSTER=orbisnet ;;
+  *ocunet*)   CLUSTER=ocunet ;;
+  *)          CLUSTER=orbisnet ;;
+esac
+export KUBECONFIG="$HOME/.kube/config-$CLUSTER"
+
+echo "== 1. cluster ($CLUSTER) =="
+kind get clusters 2>/dev/null | grep -qx "$CLUSTER" || \
   kind create cluster --config "$HERE/kind-cluster.yaml" --image kindest/node:v1.34.0 --kubeconfig "$KUBECONFIG"
 
 echo "== 2. workloads (90 benign, 5 victim, 10 malicious) =="
@@ -25,13 +36,13 @@ kubectl -n netsim get pods -l role=malicious -o jsonpath='{range .items[*]}{.sta
   | grep . | python -c "import sys,json;json.dump([l.strip() for l in sys.stdin],open('$HERE/ground-truth-malicious.json','w'))"
 
 echo "== 4. capture SYN-initiations on both workers (60s) =="
-for w in ocunet-worker ocunet-worker2; do
+for w in "$CLUSTER-worker" "$CLUSTER-worker2"; do
   docker exec $w sh -c 'command -v tcpdump >/dev/null || (apt-get update -qq && apt-get install -y -qq tcpdump) >/dev/null 2>&1'
   docker exec -d $w sh -c 'timeout 60 tcpdump -i any -w /tmp/syn.pcap "tcp[tcpflags] & tcp-syn != 0 and tcp[tcpflags] & tcp-ack == 0 and net 10.244.0.0/16" 2>/dev/null'
 done
 sleep 65
 mkdir -p "$HERE/caps"
-for w in ocunet-worker:w1 ocunet-worker2:w2; do
+for w in "$CLUSTER-worker:w1" "$CLUSTER-worker2:w2"; do
   c="${w%%:*}"; n="${w##*:}"
   docker exec $c tar cf - -C /tmp syn.pcap > "$HERE/caps/$n.tar"
   tar xf "$HERE/caps/$n.tar" -C "$HERE/caps" && mv "$HERE/caps/syn.pcap" "$HERE/caps/syn-$n.pcap"

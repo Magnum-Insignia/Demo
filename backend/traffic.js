@@ -12,10 +12,21 @@
  * availability in /health and says plainly when the cluster is not reachable.
  */
 import { execFile } from 'node:child_process'
+import fs from 'node:fs'
 import path from 'node:path'
 
-const KUBECONFIG = process.env.KUBECONFIG ||
-  path.join(process.env.HOME || process.env.USERPROFILE || '', '.kube', 'config-ocunet')
+// The kubeconfig the demo cluster writes. `config-ocunet` is the pre-rename
+// name; a cluster created before the rebrand still has its config under it, so
+// fall back rather than losing the cluster to a rename.
+function kubeconfigPath() {
+  if (process.env.KUBECONFIG) return process.env.KUBECONFIG
+  const dir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.kube')
+  const current = path.join(dir, 'config-orbisnet')
+  const legacy = path.join(dir, 'config-ocunet')
+  return fs.existsSync(current) || !fs.existsSync(legacy) ? current : legacy
+}
+
+const KUBECONFIG = kubeconfigPath()
 const NS = 'netsim'
 
 // The two attack profiles the brief asks for.

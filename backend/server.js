@@ -1,5 +1,5 @@
 /*
- * The OcuNet backend host.
+ * The OrbisNet backend host.
  *
  * Runs the ingestion pipeline, the datastore and the resident NAGA-Net engine
  * as their own process, and serves them to the desktop application over HTTP.
@@ -53,7 +53,7 @@ let requestCount = 0
 const streams = new Set()
 
 function log(...args) {
-  process.stdout.write(`[ocunet-backend] ${args.join(' ')}\n`)
+  process.stdout.write(`[orbisnet-backend] ${args.join(' ')}\n`)
 }
 
 function json(res, status, body) {

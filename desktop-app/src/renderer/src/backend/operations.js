@@ -132,7 +132,7 @@ export const OPERATIONS = {
       'auth-gateway: running',
       'uptime: 4h 12m'
     ],
-    build: () => `ocunet console ${model.ENGINE.version} · ${model.ENGINE.name} engine host`
+    build: () => `orbisnet console ${model.ENGINE.version} · ${model.ENGINE.name} engine host`
   }
 }
 

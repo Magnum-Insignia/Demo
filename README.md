@@ -1,8 +1,8 @@
-# OcuNet
+# OrbisNet
 
 Predictive cyber-defence monitoring, powered by the **NAGA-Net** engine.
 
-OcuNet learns how a network's state evolves, rolls that forward K steps, and
+OrbisNet learns how a network's state evolves, rolls that forward K steps, and
 tells a defender where the network is heading — mapped to MITRE ATT&CK stages,
 with the features driving every prediction on screen beside it.
 
@@ -60,6 +60,8 @@ rather than to a dead screen.
 containerised flows.
 
 ```bash
+# the repository is still named OcuNet_SysApp on GitHub -- the product rename
+# has not been applied to the remote
 git clone https://github.com/Magnum-Insignia/OcuNet_SysApp.git
 cd OcuNet_SysApp/desktop-app
 npm install

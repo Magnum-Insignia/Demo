@@ -2,7 +2,7 @@
 # spread across the two workers. Real Kubernetes, real CNI, real pod IPs.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-name: ocunet
+name: orbisnet
 networking:
   podSubnet: "10.244.0.0/16"
   serviceSubnet: "10.96.0.0/16"

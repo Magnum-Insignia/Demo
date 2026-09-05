@@ -127,9 +127,7 @@ export default function ResidentMemory() {
 
         <RequirePermission
           permission={PERMISSIONS.ENGINE_MEMORY_EDIT}
-          fallback={
-            <p className="text-[10px] text-slate-400 font-mono">Requires SOC Director on an MFA-verified session.</p>
-          }
+          fallback={null}
         >
           <p className="text-[10px] text-slate-400 font-mono">Pinned windows must be unpinned before eviction.</p>
         </RequirePermission>

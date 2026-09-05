@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { runCommand } from './commands'
 
-const WELCOME = ['OcuNet operator console — type "help" to list commands.']
+const WELCOME = ['OrbisNet operator console — type "help" to list commands.']
 
 export default function CliAccessFrame() {
   const { user, role } = useAuth()

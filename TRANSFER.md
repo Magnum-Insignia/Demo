@@ -1,4 +1,4 @@
-# OcuNet / NAGA-Net — Transfer Document
+# OrbisNet / NAGA-Net — Transfer Document
 
 Handoff for an AI agent (Claude Code / Opus) or engineer taking over this repo.
 Read this fully before changing anything. It covers what the system is, what is
@@ -6,11 +6,11 @@ Read this fully before changing anything. It covers what the system is, what is
 the simulations, and how to manage traffic.
 
 Repo remotes:
-- `origin` → https://github.com/aadithyamahadev/OcuNet_SysApp
+- `origin` → https://github.com/aadithyamahadev/OcuNet_SysApp  (repo not renamed)
 - `demo`   → https://github.com/Magnum-Insignia/Demo  (public)
 
 Baseline at time of writing: commit `f1b71b8`. Primary working dir:
-`C:\Users\admin\OcuNet_SysApp`. Platform: Windows 11, PowerShell + Git Bash.
+`C:\Users\admin\OcuNet_SysApp` (folder not renamed). Platform: Windows 11, PowerShell + Git Bash.
 
 ---
 
@@ -96,10 +96,10 @@ docker info --format '{{.ServerVersion}}'
 # 1. Cluster (creates it if absent; ~2-3 min first time, pulls a 1.45GB node image)
 bash k8s-demo/run-demo.sh          # cluster + 100 pods + a capture+detect pass
 #    or just ensure it exists:
-~/bin/kind.exe get clusters        # expect: ocunet
+~/bin/kind.exe get clusters        # expect: orbisnet
 
 # 2. Backend HOST process — NOT the container (see §11). Needs KUBECONFIG.
-export KUBECONFIG="$HOME/.kube/config-ocunet"
+export KUBECONFIG="$HOME/.kube/config-orbisnet"
 node backend/server.js             # listens on http://127.0.0.1:8787
 #    On boot it logs "live monitor: started" and begins capturing continuously.
 
@@ -115,7 +115,7 @@ and `traffic.available` should be `true`.
 Sign in: SOC Director, any username/password, then the fingerprint step-up.
 Header should read **BACKEND LIVE** (green). If **ON-DEVICE**, the host is down.
 
-Tear down cluster when done: `~/bin/kind.exe delete cluster --name ocunet`.
+Tear down cluster when done: `~/bin/kind.exe delete cluster --name orbisnet`.
 
 ---
 
@@ -290,7 +290,7 @@ desktop-app/src/renderer/src/
 ## 11. Gotchas (things that already bit us — don't relearn them)
 
 1. **Backend must run as the HOST Node process, not the container.** The
-   container (`ocunet-backend`) cannot reach Docker/kubectl/tcpdump, so live
+   container (`orbisnet-backend`) cannot reach Docker/kubectl/tcpdump, so live
    capture and traffic status only work when you run `node backend/server.js` on
    the host. The container is fine for a pure UI demo.
 2. **Docker cannot sniff the host Wi-Fi.** Containers see only the cluster's
@@ -314,6 +314,20 @@ desktop-app/src/renderer/src/
 9. **Dates:** live mode uses real capture times (today). The authored fallback
    forecast projects `now + K*step` and can show future dates — that's the
    forecast horizon, only visible with no live source.
+10. **The product was renamed OcuNet -> OrbisNet.** Three things deliberately
+   still carry the old name, because they are addresses rather than branding:
+   the GitHub repo (`aadithyamahadev/OcuNet_SysApp`), the working directory
+   (`C:\Users\admin\OcuNet_SysApp`), and any kind cluster built before the
+   rename (`ocunet`, with `ocunet-worker[2]` nodes and `~/.kube/config-ocunet`).
+   The code copes with the last of these rather than depending on the new name:
+   `live_capture.js` finds worker nodes by kind's own container label, and
+   `run-demo.sh` / `attack.sh` / `traffic.js` fall back to the `ocunet`
+   kubeconfig when the `orbisnet` one is absent. A fresh cluster is named
+   `orbisnet`. To get the new name everywhere on screen:
+   `~/bin/kind.exe delete cluster --name ocunet && bash k8s-demo/run-demo.sh`
+   (~3 min; also regenerates `inventory.tsv`, `k8s-topology.json` and
+   `detection-report.html`, which still record the `ocunet-worker` node names
+   they were actually captured from -- those were left truthful, not relabelled).
 
 ---
 

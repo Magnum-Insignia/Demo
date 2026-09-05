@@ -46,3 +46,6 @@ __pycache__/
 
 # k8s demo captures
 k8s-demo/caps/
+
+# e2e screenshots
+desktop-app/e2e-*.png

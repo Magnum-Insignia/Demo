@@ -1,8 +1,8 @@
 {
-  "name": "ocunet-backend",
+  "name": "orbisnet-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "OcuNet backend host — ingestion pipeline, datastore and the NAGA-Net engine host",
+  "description": "OrbisNet backend host — ingestion pipeline, datastore and the NAGA-Net engine host",
   "type": "module",
   "main": "server.js",
   "scripts": {

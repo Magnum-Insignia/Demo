@@ -1,4 +1,4 @@
-# The OcuNet backend host.
+# The OrbisNet backend host.
 #
 # Builds the web fallback interface, then runs the backend process that serves
 # both the API and that build. No runtime dependencies beyond Node itself — the

@@ -1,7 +1,7 @@
 {
-  "name": "ocunet",
+  "name": "orbisnet",
   "version": "1.0.0",
-  "description": "OcuNet — predictive cyber defense monitoring, powered by the NAGA-Net engine",
+  "description": "OrbisNet — predictive cyber defense monitoring, powered by the NAGA-Net engine",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -29,7 +29,7 @@
   },
   "build": {
     "appId": "com.sih.worldmodeldashboard",
-    "productName": "OcuNet",
+    "productName": "OrbisNet",
     "directories": {
       "output": "release3"
     },

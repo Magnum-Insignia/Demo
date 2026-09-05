@@ -25,7 +25,7 @@ export default function LoginPage() {
           WM
         </div>
         <div>
-          <div className="font-bold text-lg text-slate-900 tracking-wide">OcuNet</div>
+          <div className="font-bold text-lg text-slate-900 tracking-wide">OrbisNet</div>
           <div className="text-xs text-slate-400 font-mono">Stage 1 of 2 &middot; Identity &amp; Password</div>
         </div>
       </div>

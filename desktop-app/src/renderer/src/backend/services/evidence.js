@@ -48,7 +48,7 @@ export function buildBundle(alertId) {
   })
 
   const body = {
-    schema: 'ocunet.evidence.v1',
+    schema: 'orbisnet.evidence.v1',
     generatedAt: new Date().toISOString(),
     engine: { name: ENGINE.name, version: ENGINE.version, trainedOn: ENGINE.trainedOn, metrics: ENGINE_METRICS },
     alert,
@@ -112,12 +112,12 @@ export function buildBundle(alertId) {
     decisions: listDecisions().map((d) => ({ ...d, at: d.at.toISOString() })),
     attestation: {
       statement:
-        'Produced by OcuNet, a passive monitoring product. No control action was taken by the system. Every decision recorded above was authorised by a named operator.',
+        'Produced by OrbisNet, a passive monitoring product. No control action was taken by the system. Every decision recorded above was authorised by a named operator.',
       stageTaxonomy: ['Nominal', 'Recon', 'Access', 'Lateral', 'C2 / Exfil']
     }
   }
 
-  return { ok: true, filename: `ocunet-evidence-${alertId}-${Date.now()}.json`, hash: contentHash(body), bundle: { ...body, hash: contentHash(body) } }
+  return { ok: true, filename: `orbisnet-evidence-${alertId}-${Date.now()}.json`, hash: contentHash(body), bundle: { ...body, hash: contentHash(body) } }
 }
 
 export { stageForRisk }

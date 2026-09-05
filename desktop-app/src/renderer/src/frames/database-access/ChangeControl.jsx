@@ -106,9 +106,6 @@ export default function ChangeControl() {
         </table>
       </div>
 
-      {!canApprove && (
-        <p className="text-[10px] text-slate-400 font-mono">Requires SOC Director on an MFA-verified session.</p>
-      )}
     </div>
   )
 }

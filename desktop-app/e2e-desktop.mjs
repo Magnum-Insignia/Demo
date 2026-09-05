@@ -33,7 +33,7 @@ const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
 
 ok('desktop window opens', !!page)
-ok('window title', (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).includes('OcuNet'))
+ok('window title', (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).includes('OrbisNet'))
 
 // sign in
 await page.getByRole('button', { name: /SOC Director/i }).first().click()

@@ -191,7 +191,7 @@ export function generate(windowKey, kSteps, seedTag) {
 
   const riskNow = historyRisk[points - 1]
 
-  const ceiling = 98
+  const ceiling = 85 // the forecast never projects above 85% — no false certainty
   const decay = 0.9
   const forecastLabels = []
   const forecastRisk = []
@@ -202,7 +202,7 @@ export function generate(windowKey, kSteps, seedTag) {
   for (let s = 1; s <= kSteps; s++) {
     const base = ceiling - (ceiling - riskNow) * Math.pow(decay, s)
     const jitter = (rnd() - 0.5) * 3
-    const val = clamp(base + jitter, riskNow, 99.5)
+    const val = clamp(base + jitter, riskNow, ceiling)
     const band = clamp(2.5 + s * 1.3 + rnd() * 1.5, 0, 40)
     forecastRisk.push(val)
     forecastUpper.push(clamp(val + band, 0, 100))
@@ -338,7 +338,7 @@ export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
   const nowMs = last ? last.tMs : Date.now()
 
   // forward projection from the live current risk
-  const ceiling = 98
+  const ceiling = 85 // never project above 85% — a 100% forecast is not credible
   const decay = 0.9
   const forecastLabels = []
   const forecastRisk = []
@@ -348,7 +348,7 @@ export function liveForecast(points, kSteps = 10, windowSeconds = 8) {
   let breachStep = null
   for (let s = 1; s <= kSteps; s++) {
     const base = ceiling - (ceiling - riskNow) * Math.pow(decay, s)
-    const val = clamp(base, riskNow, 99.5)
+    const val = clamp(base, riskNow, ceiling)
     const band = clamp(2.5 + s * 1.3, 0, 40)
     forecastRisk.push(val)
     forecastUpper.push(clamp(val + band, 0, 100))

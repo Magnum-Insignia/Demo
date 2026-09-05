@@ -30,7 +30,7 @@ export default function Header({ windowKey, setWindowKey, kSteps, setKSteps, res
           WM
         </div>
         <div>
-          <h1 className="font-bold text-base tracking-wide text-slate-900">OcuNet</h1>
+          <h1 className="font-bold text-base tracking-wide text-slate-900">OrbisNet</h1>
         </div>
       </div>
 

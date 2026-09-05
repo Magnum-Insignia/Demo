@@ -1,4 +1,4 @@
-# OcuNet — Implementation Plan
+# OrbisNet — Implementation Plan
 
 Delivering `baseplan.md`: a predictive cyber-defence monitoring product built on
 **NAGA-Net**, demonstrated on two machines simultaneously — one running a dense
@@ -41,7 +41,7 @@ npm run e2e                                        9/9
   all 11 modules render (SOC Director)             11/11
   UI mutation reaches the backend process          al-2041 on host: open -> closed
   evidence bundle assembles with integrity hash    fnv1a-…, 25 flows, 12 devices
-  evidence export downloads a file                 ocunet-evidence-al-2041-….json
+  evidence export downloads a file                 orbisnet-evidence-al-2041-….json
   blind-spot drill, host and UI agree              cap-01 -> degraded, coverage 94% -> 88%
   all 11 modules render (SOC Analyst)              11/11
   RBAC holds: analyst cannot authorise actions     controls absent, reason shown
@@ -73,7 +73,7 @@ npm run e2e:offline                                5/5
 ## 1. Architecture
 
 ```
- monitored segments                    OcuNet backend                       clients
+ monitored segments                    OrbisNet backend                       clients
  ─────────────────                     ──────────────                       ───────
  SPAN / TAP ports ─┐
  host agents ──────┼─► capture ─► feature ─► Redis ─► datastore ─┐

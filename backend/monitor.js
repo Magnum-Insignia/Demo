@@ -17,6 +17,9 @@ import { capture } from './live_capture.js'
 
 const MAX_POINTS = 90 // rolling history (~13 min at an 8s window)
 const WINDOW_SECONDS = 8
+// The forecast never claims certainty — infiltration probability is capped here
+// so the dashboard projects to at most 85%, not an implausible 100%.
+const RISK_CEILING = 85
 
 const history = []
 let running = false
@@ -40,9 +43,10 @@ function toPoint(r) {
   return {
     t: r.at,
     tMs: Date.parse(r.at),
-    // infiltration probability, 0-100: the busiest endpoint's score. Flat and
-    // low while benign, ~100 under attack.
-    risk: Math.round(maxScore * 100),
+    // infiltration probability, 0-100: the busiest endpoint's score, capped at
+    // the projection ceiling (85). Flat and low while benign, ~85 under attack —
+    // a forecast that reads 100% is not credible, so it never claims certainty.
+    risk: Math.min(Math.round(maxScore * 100), RISK_CEILING),
     flagged: flaggedRows.length,
     endpoints: r.sourceEndpoints,
     packets: r.capturedPackets,

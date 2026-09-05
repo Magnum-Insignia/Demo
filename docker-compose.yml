@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: ocunet-backend
+    container_name: orbisnet-backend
     environment:
       HOST: 0.0.0.0
       PORT: '8787'
@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ocunet-frontend-dev
+    container_name: orbisnet-frontend-dev
     ports:
       - '5173:5173'
     volumes:

@@ -100,11 +100,9 @@ export default function ActionCard({ action, integration, canAuthorise, onDecide
             Reject
           </button>
         </div>
-      ) : (
-        <p className="text-[10px] text-slate-400 font-mono">
-          {decided ? 'Already decided.' : 'Requires SOC Director on an MFA-verified session.'}
-        </p>
-      )}
+      ) : decided ? (
+        <p className="text-[10px] text-slate-400 font-mono">Already decided.</p>
+      ) : null}
     </div>
   )
 }
