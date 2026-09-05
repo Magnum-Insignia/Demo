@@ -57,11 +57,18 @@ async function groundTruth() {
   const r = await run('kubectl', ['-n', 'netsim', 'get', 'pods', '-l', 'role=malicious',
     '-o', 'jsonpath={range .items[*]}{.status.podIP}{"\\n"}{end}'],
     { timeoutMs: 6000 })
-  let ips = r.stdout.split('\n').map((s) => s.trim()).filter(Boolean)
-  if (ips.length) return { ips, from: 'kubectl (live)' }
+  // Trust kubectl's live answer whenever it RAN — including an empty result,
+  // which means the attackers are scaled to zero (the quiet baseline). Only
+  // fall back to the last-run file when kubectl itself failed (cluster
+  // unreachable); using a stale IP list on a quiet cluster would flag benign
+  // pods that have since reused those addresses.
+  if (r.ok) {
+    const ips = r.stdout.split('\n').map((s) => s.trim()).filter(Boolean)
+    return { ips, from: 'kubectl (live)' }
+  }
   try {
     const f = path.join(REPO, 'k8s-demo', 'ground-truth-malicious.json')
-    ips = JSON.parse(fs.readFileSync(f, 'utf-8'))
+    const ips = JSON.parse(fs.readFileSync(f, 'utf-8'))
     return { ips, from: 'last run (ground-truth-malicious.json)' }
   } catch {
     return { ips: [], from: 'unavailable' }
