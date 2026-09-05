@@ -13,21 +13,29 @@
 # Then, in the desktop app: Ingest -> Live Capture -> Capture.
 # `config-ocunet` is the pre-rename kubeconfig; fall back to it so a cluster
 # created before the rebrand is still reachable.
-if [ -z "$KUBECONFIG" ]; then
-  KUBECONFIG="$HOME/.kube/config-orbisnet"
-  [ -f "$KUBECONFIG" ] || [ ! -f "$HOME/.kube/config-ocunet" ] || KUBECONFIG="$HOME/.kube/config-ocunet"
+# Pick the kubeconfig that actually reaches a live cluster. An exported but
+# STALE KUBECONFIG (e.g. a deleted pre-rename cluster) used to be trusted
+# blindly, so every scale silently failed while the script still reported a
+# quiet baseline. Now each candidate is probed and a dead one is discarded.
+_reaches() { [ -f "$1" ] && KUBECONFIG="$1" kubectl -n netsim get ns netsim >/dev/null 2>&1; }
+for _cand in "$KUBECONFIG" "$HOME/.kube/config-orbisnet" "$HOME/.kube/config-ocunet"; do
+  if _reaches "$_cand"; then KUBECONFIG="$_cand"; export KUBECONFIG; _ok=1; break; fi
+done
+if [ -z "$_ok" ]; then
+  echo "!! no reachable cluster (tried KUBECONFIG, config-orbisnet, config-ocunet)." >&2
+  echo "   Is the cluster up?  kind get clusters" >&2
+  exit 1
 fi
-export KUBECONFIG
 NS=netsim
 N="${2:-10}"
 
 case "${1:-status}" in
-  known)   kubectl -n $NS scale deploy/malicious          --replicas="$N" ;;
-  unknown) kubectl -n $NS scale deploy/malicious-unknown  --replicas="$N" ;;
+  known)   kubectl -n $NS scale deploy/malicious          --replicas="$N" || exit 1 ;;
+  unknown) kubectl -n $NS scale deploy/malicious-unknown  --replicas="$N" || exit 1 ;;
   both)    kubectl -n $NS scale deploy/malicious          --replicas="$N"
            kubectl -n $NS scale deploy/malicious-unknown  --replicas="$N" ;;
-  stop)    kubectl -n $NS scale deploy/malicious          --replicas=0
-           kubectl -n $NS scale deploy/malicious-unknown  --replicas=0 ;;
+  stop)    kubectl -n $NS scale deploy/malicious          --replicas=0 || exit 1
+           kubectl -n $NS scale deploy/malicious-unknown  --replicas=0 || exit 1 ;;
   status)  ;;
   *) echo "usage: bash attack.sh {known|unknown|both|stop|status} [replicas]"; exit 1 ;;
 esac

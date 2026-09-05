@@ -25,13 +25,9 @@ if errorlevel 1 (
 echo       Docker engine is up.
 
 echo.
-echo [2/4] Bringing up the kind cluster + 100-pod network...
+echo [2/4] Cluster pre-flight (fast when already healthy)...
 cd /d "%REPO%"
-"C:\Program Files\Git\bin\bash.exe" k8s-demo/run-demo.sh
-
-echo.
-echo       resetting to a quiet baseline (no attack carried over)...
-"C:\Program Files\Git\bin\bash.exe" k8s-demo/attack.sh stop
+"C:\Program Files\Git\bin\bash.exe" k8s-demo/ensure-ready.sh
 
 echo.
 echo [3/4] Starting the OrbisNet backend host...
