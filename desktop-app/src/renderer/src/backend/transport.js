@@ -164,6 +164,12 @@ export async function connect({ url, timeoutMs = 1500 } = {}) {
     liveCaptureCap = health.liveCapture || { available: false }
     trafficCap = health.traffic || { available: false }
 
+    // Start every session on a fresh baseline: drop the monitor's rolling
+    // series so a newly opened app never shows the previous session's traffic
+    // (a stale attack spike still sitting in the graphs). Best-effort — an
+    // older host without the route just keeps its series.
+    await post('/monitor/reset', {}).catch(() => {})
+
     const snapshot = await post('/snapshot', { operations: SNAPSHOT_OPERATIONS })
     Object.entries(snapshot.results).forEach(([opKey, value]) => cache.set(`${opKey}:`, value))
 

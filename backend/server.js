@@ -28,7 +28,7 @@ import { OPERATIONS, MUTATIONS, invoke } from '../desktop-app/src/renderer/src/b
 import { ENGINE } from '../desktop-app/src/renderer/src/backend/services/model.js'
 import { capture as liveCapture, probe as liveProbe, topology as liveTopology } from './live_capture.js'
 import { generate as genTraffic, stop as stopTraffic, status as trafficStatus, probe as trafficProbe } from './traffic.js'
-import { start as startMonitor, getHistory as monitorHistory } from './monitor.js'
+import { start as startMonitor, getHistory as monitorHistory, reset as monitorReset } from './monitor.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT || 8787)
@@ -175,6 +175,14 @@ const server = http.createServer(async (req, res) => {
 
   // The continuous monitor's rolling time series — the source of truth for the
   // live graphs. Populated server-side whether or not any client is looking.
+  // Clear the rolling series so a newly opened app starts on a fresh baseline
+  // rather than inheriting the previous session's graphs.
+  if (pathname === '/monitor/reset' && req.method === 'POST') {
+    const r = monitorReset()
+    log(`monitor reset (dropped ${r.dropped} points)`)
+    return json(res, 200, { result: r })
+  }
+
   if (pathname === '/monitor/history' && req.method === 'GET') {
     return json(res, 200, { result: monitorHistory() })
   }

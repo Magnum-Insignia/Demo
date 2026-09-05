@@ -5,11 +5,9 @@ import { PERMISSIONS } from '../../auth/permissions'
 import { buildStylesheet, themeTokens } from './graphStyle'
 import { buildElements, findDevice, findEdge, ALL_DEVICES } from './elementsBuilder'
 import { riskAt, riskFillColor, ROLES } from './encoding'
-import backend from '../../backend'
 import DevicePropertiesPanel from './DevicePropertiesPanel'
 import EdgePropertiesPanel from './EdgePropertiesPanel'
 import AttackVectorPanel from './AttackVectorPanel'
-import LiveTopology from './LiveTopology'
 import Legend from './Legend'
 import { useTheme } from '../../theme/ThemeContext'
 
@@ -267,14 +265,15 @@ function TopologyGraph() {
 }
 
 export default function TopologyFrame() {
-  // Prefer the REAL cluster topology when the backend can reach it; fall back to
-  // the reference network only when there is no live cluster (air-gapped, or the
-  // host is down), so the page shows something rather than nothing.
-  const [live, setLive] = useState(backend.liveCapture.capability().available)
-
+  // The network topology is hard-coded: it always renders the curated reference
+  // network (elementsBuilder.ALL_DEVICES), never a live cluster query. A live
+  // topology is unpredictable to render mid-demo (pod churn, sparse windows),
+  // so the topology view is a fixed, known-good graph. Live detection still
+  // flows to every other surface (dashboard, alerts, live capture); only this
+  // page is pinned.
   return (
     <RequirePermission permission={PERMISSIONS.TOPOLOGY_VIEW}>
-      {live ? <LiveTopology onUnavailable={() => setLive(false)} /> : <TopologyGraph />}
+      <TopologyGraph />
     </RequirePermission>
   )
 }

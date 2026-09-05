@@ -64,6 +64,21 @@ function push(point) {
   if (history.length > MAX_POINTS) history.shift()
 }
 
+/*
+ * Drop the rolling series and start a fresh baseline.
+ *
+ * The app calls this once on connect, so opening the demo never shows the
+ * previous session's traffic — no stale attack spike sitting in the graphs from
+ * a run that ended ten minutes ago. The next captured window starts a clean
+ * series; the detector and cluster are untouched.
+ */
+export function reset() {
+  const dropped = history.length
+  history.length = 0
+  lastDetail = null
+  return { ok: true, dropped }
+}
+
 export function getHistory() {
   return {
     available: running,

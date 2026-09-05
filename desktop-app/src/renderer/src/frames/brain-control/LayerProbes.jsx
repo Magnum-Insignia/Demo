@@ -10,6 +10,7 @@ export default function LayerProbes() {
     <div className="glass-panel rounded-xl p-5 space-y-3">
       <div>
         <h3 className="font-bold text-sm text-slate-900">Layer Probes</h3>
+        <p className="text-xs text-slate-500 mt-0.5">Mean activation per layer on the current state vector</p>
       </div>
 
       <div className="space-y-2.5">

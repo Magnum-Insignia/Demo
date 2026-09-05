@@ -44,6 +44,7 @@ export default function LiveIngestPanel() {
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-sm text-slate-900">Ingestion Layer</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Capture &rarr; features &rarr; queue &rarr; data model &rarr; NAGA-Net</p>
         </div>
         <span
           className={

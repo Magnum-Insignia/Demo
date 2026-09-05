@@ -89,6 +89,18 @@ export default function BrainControlFrame() {
 
         </div>
 
+        <div className="glass-panel rounded-xl p-5 h-full flex flex-col justify-center space-y-4">
+          <div className="space-y-4">
+            <h3 className="font-bold text-xs text-slate-900">Resimulation</h3>
+            <button
+              onClick={triggerRetrain}
+              disabled={retraining}
+              className="w-full text-xs font-mono font-bold py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-60"
+            >
+              {retraining ? 'Rolling out K-step simulation…' : 'Trigger resimulation'}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">

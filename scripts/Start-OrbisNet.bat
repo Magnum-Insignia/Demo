@@ -30,6 +30,10 @@ cd /d "%REPO%"
 "C:\Program Files\Git\bin\bash.exe" k8s-demo/run-demo.sh
 
 echo.
+echo       resetting to a quiet baseline (no attack carried over)...
+"C:\Program Files\Git\bin\bash.exe" k8s-demo/attack.sh stop
+
+echo.
 echo [3/4] Starting the OrbisNet backend host...
 start "OrbisNet backend" cmd /k "cd /d %REPO% && set KUBECONFIG=%KUBECONFIG% && node backend\server.js"
 timeout /t 6 /nobreak >nul
